@@ -1,51 +1,50 @@
-# Mega
+<p align="center">
+  <img src="assets/mega-sprite.svg" width="160" alt="Mega" />
+</p>
 
-An AI-native engineer for the Brainbase Conversational Platform.
-Design, deploy, and manage conversational agents from any code-native environment.
+<h1 align="center">Mega</h1>
+
+<p align="center">
+  <strong>Your AI teammate for the Brainbase Conversational Platform.</strong><br/>
+  Describe what you want. Mega builds it, deploys it, and manages it.
+</p>
+
+<p align="center">
+  <a href="https://docs.usebrainbase.com/mega">Docs</a> &middot;
+  <a href="docs/based.md">Based Reference</a> &middot;
+  <a href="examples/">Examples</a>
+</p>
+
+---
 
 ## What is Mega?
 
-Mega gives AI coding tools (Claude Code, Cursor, Codex, or any environment that can run scripts) deep knowledge of the Brainbase platform and the ability to interact with it programmatically. Think of it as an expert Brainbase engineer that lives in your terminal.
+Mega gives AI coding tools — Claude Code, Cursor, Codex, or anything that reads files — deep knowledge of the Brainbase platform. It's not a CLI, not an SDK, not an agent framework. It's a repo full of context that makes your AI tool an expert Brainbase engineer.
 
-**What it can do:**
+You say what you need. Mega knows the rest.
 
-- Write production-quality [Based](docs/based.md) flows from business requirements, documents, or spreadsheets
-- Deploy agents across voice, chat, SMS, WhatsApp, and more
-- Manage existing deployments — inspect logs, update flows, scale configurations
-- Clone a working deployment across dozens of instances with different parameters
-- Test and iterate on flows before going live
+**Write flows** — from business requirements, PDFs, spreadsheets, or a conversation.
+**Deploy anywhere** — voice, chat, SMS, WhatsApp, API. One flow, many channels.
+**Scale** — templatize a working flow and deploy it across dozens of instances.
+**Debug** — pull logs, find where callers get stuck, fix the prompt, redeploy.
 
-## Setup
-
-### 1. Clone the repo
+## Quick start
 
 ```bash
 git clone https://github.com/BrainbaseHQ/mega.git
 cd mega
+cp .env.example .env   # add your Brainbase API key
 ```
 
-### 2. Configure your API key
+Open `mega/` in your AI tool. It auto-configures:
 
-```bash
-cp .env.example .env
-# Add your Brainbase API key
-```
-
-### 3. Open in your AI tool
-
-Mega auto-configures for your environment:
-
-| Tool | Config file | What loads |
+| Tool | Config | What Mega gives it |
 |-|-|-|
-| Claude Code | `CLAUDE.md` | Full platform context, Based reference, interaction patterns |
+| Claude Code | `CLAUDE.md` | Full platform context, Based reference, workflow patterns |
 | Cursor | `.cursorrules` | Based syntax, platform conventions |
 | Codex | `AGENTS.md` | Agent instructions for autonomous operation |
 
-Just open the `mega/` directory in your tool and start working.
-
-### 4. Start building
-
-Tell your AI tool what you need:
+Then just talk to it:
 
 ```
 "Here's our customer support playbook [attach PDF].
@@ -54,41 +53,33 @@ Tell your AI tool what you need:
 ```
 
 ```
-"Take the appointment-booking worker and deploy it to
- these 40 phone numbers [attach spreadsheet]. Each should
- use the dealership name and hours from the sheet."
+"Deploy the booking agent to these 40 phone numbers
+ [attach spreadsheet]. Use the dealership name and hours
+ from each row."
 ```
 
 ```
-"Pull the logs from deployment deploy_abc123 for the last
- week. What are the most common call outcomes? Are there
- any flows where callers are getting stuck?"
+"Pull logs from deploy_abc123. Where are callers getting
+ stuck? Fix it and redeploy."
 ```
 
-## How it works — end-to-end workflow
+## How it works — end-to-end
 
-Here's what actually happens when you use Mega. This example walks through building and deploying an appointment booking agent from scratch.
+Here's what actually happens when you use Mega. This walks through building and deploying an appointment booking agent.
 
-### Step 1: You describe what you need
-
-Open the `mega/` directory in Claude Code (or Cursor, Codex, etc.) and describe what you want:
+### 1. Describe what you need
 
 ```
-"Build me an appointment booking agent for a dental office.
- It should greet callers, collect their name and phone number,
- let them pick a service (cleaning, filling, consultation),
- choose a date/time, and confirm the booking."
+"Build an appointment booking agent for a dental office.
+ Greet callers, collect name and phone, let them pick a service
+ (cleaning, filling, consultation), choose a time, and confirm."
 ```
 
-### Step 2: The AI reads the Based reference
+### 2. Mega reads the Based reference
 
-Your AI tool automatically loads `CLAUDE.md` (or `.cursorrules` / `AGENTS.md`), which points it to `docs/based.md`. It reads the full Based language reference and understands the `loop/until/talk` pattern, how `say()` and `.ask()` work, and the constraints (top-level constructs, no inline comments after `return`, etc.).
+Your AI tool loads `CLAUDE.md` which points to `docs/based.md` — the complete Based language spec. It learns `loop/until/talk`, how `say()` and `.ask()` work, constraints, and patterns. It also finds `examples/appointment-booking.based` as a working template.
 
-It also references `examples/appointment-booking.based` as a working template.
-
-### Step 3: The AI writes the flow
-
-It produces a `.based` file using the patterns from the docs:
+### 3. Mega writes the flow
 
 ```python
 say("Thanks for calling Riverside Dental! How can I help you?")
@@ -105,62 +96,51 @@ until "caller is done":
     end_call()
 ```
 
-### Step 4: The AI creates a worker and flow
-
-Using `scripts/bb.sh`, the AI creates the worker and uploads the flow:
+### 4. Mega creates a worker and uploads the flow
 
 ```bash
-# Create a worker
 ./scripts/bb.sh workers create --name "Riverside Dental" --description "Appointment booking"
-
-# Create the flow
 ./scripts/bb.sh flows create <worker_id> --name "Booking" --code-file booking.based
 ```
 
-### Step 5: Test via the engine
-
-The AI can test the flow directly against the Based engine (no deployment needed):
+### 5. Test directly against the engine
 
 ```bash
-curl "https://studio.brainbaselabs.com/v1/chat/completions?agent_id=<worker_id>&session_id=test-001" \
+curl "https://studio.brainbaselabs.com/v1/chat/completions\
+?agent_id=<worker_id>&session_id=test-001" \
   -H "Authorization: Bearer <engine_key>" \
   -H "x-brainbase-api-key: <your_api_key>" \
   -H 'x-initial-state: {"variables": {}}' \
   -H "Content-Type: application/json" \
-  -d '{"model": "gpt-4.1-mini", "messages": [{"role": "user", "content": "Hi, I need a cleaning"}]}'
+  -d '{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"I need a cleaning"}]}'
 ```
 
-### Step 6: Deploy
-
-Once the flow works, create a deployment to connect it to a real channel:
+### 6. Deploy to a real channel
 
 ```bash
 ./scripts/bb.sh deployments create-voice <worker_id> \
-  --flow-id <flow_id> \
-  --phone "+15551234567" \
-  --name "Riverside Dental - Main Line"
+  --flow-id <flow_id> --phone "+15551234567" --name "Main Line"
 ```
 
-### Scaling to many deployments
+### Scaling: one flow, many deployments
 
-The real power is templatization. If you have 40 dental offices, you write **one flow** using `variables`:
+Write one flow with `variables`:
 
 ```python
 name = variables.get('office_name', 'our office')
 hours = variables.get('hours', '9am-5pm')
 ```
 
-Then deploy it 40 times with different variable values per office. Tell the AI:
+Deploy it 40 times with different values per office. Tell Mega:
 
 ```
-"Here's a spreadsheet with 40 offices. Each row has the office name,
- hours, phone number, and services offered. Deploy the booking flow
- to each one using the data from the spreadsheet."
+"Here's a spreadsheet with 40 offices — name, hours, phone,
+ services. Deploy the booking flow to each one."
 ```
 
-The AI reads the spreadsheet, creates workers, and deploys each one with the right variables.
+It reads the spreadsheet, creates workers, and deploys each with the right variables.
 
-## Project structure
+## What's inside
 
 ```
 mega/
@@ -168,14 +148,14 @@ mega/
 │   ├── based.md           # Complete Based language reference
 │   ├── platform.md        # Workers, flows, deployments, resources
 │   └── deployments.md     # Deployment types and configuration
-├── examples/              # Production-quality Based flow examples
+├── examples/              # Validated, engine-tested Based flows
 │   ├── inbound-router.based
 │   ├── appointment-booking.based
 │   ├── order-taking.based
 │   ├── lead-qualification.based
 │   └── outbound-campaign.based
-├── scripts/               # Platform interaction scripts
-│   └── bb.sh              # CLI wrapper for Brainbase API
+├── scripts/
+│   └── bb.sh              # CLI wrapper for the Brainbase API
 ├── CLAUDE.md              # Claude Code context
 ├── .cursorrules           # Cursor context
 └── AGENTS.md              # Codex context
@@ -183,17 +163,29 @@ mega/
 
 ## The Based language
 
-Based is the language used to define conversational flows on Brainbase. It compiles to Python and executes on the Brainbase engine. If you can write Python, you can write Based — it adds a small set of constructs for managing multi-turn conversations.
+Based is Python + a small set of constructs for multi-turn, LLM-driven conversations. If you can write Python, you can write Based.
 
-See [docs/based.md](docs/based.md) for the complete reference.
+```python
+loop:
+    res = talk("You are a helpful assistant.", False)
+until "user wants to schedule":
+    details = res.ask(question="When?", example={"date": "tomorrow", "time": "2pm"})
+    say(f"Booked for {details['date']} at {details['time']}.")
+until "user says goodbye":
+    say("Take care!")
+```
 
-## Documentation
+See [docs/based.md](docs/based.md) for the full reference.
 
-The Based language reference in `docs/based.md` is the canonical source. For the latest official documentation, see the [Brainbase docs](https://docs.usebrainbase.com).
+## Links
+
+- [Brainbase docs](https://docs.usebrainbase.com)
+- [Mega docs page](https://docs.usebrainbase.com/mega)
+- [Based Language Fundamentals](https://docs.usebrainbase.com/language-fundamentals/overview)
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Issues and pull requests welcome.
 
 ## License
 
