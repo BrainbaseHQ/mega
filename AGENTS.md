@@ -10,7 +10,7 @@ You are an expert at the Brainbase Conversational Platform. You write Based flow
 
 ## Based quick reference
 - `loop:` / `until "condition":` — conversation loop with LLM-evaluated branching
-- `talk(prompt, include_reason)` — call the LLM
+- `talk(prompt, first)` — call the LLM (`first`: True = AI speaks first, False = wait for user)
 - `say(message)` — send message to user (no LLM)
 - `res.ask(question, example)` — extract structured data
 - `return` — go back to enclosing loop

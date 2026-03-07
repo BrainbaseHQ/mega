@@ -18,7 +18,7 @@ Read these before writing any Based code or interacting with the platform:
 - `docs/deployments.md` — Deployment types and their configuration
 - `examples/` — Production-quality Based flows you can reference and adapt
 
-For the latest official Brainbase documentation, fetch from https://docs.brainbase.com. The docs in this repo are the canonical Based reference but platform docs may be updated independently.
+For the latest official Brainbase documentation, see https://docs.usebrainbase.com. The docs in this repo are the canonical Based reference but platform docs may be updated independently.
 
 ## Writing Based flows
 
@@ -32,7 +32,7 @@ until "condition the LLM evaluates":
 ```
 
 Key rules:
-- `talk()` takes a system prompt and a boolean for reason tracing
+- `talk()` takes a system prompt and a `first` boolean (`True` = AI speaks first, `False` = wait for user)
 - `until` conditions are natural language — the LLM decides when they match
 - `.ask()` extracts structured data: `res.ask(question="...", example={...})`
 - `say()` sends a message without LLM involvement

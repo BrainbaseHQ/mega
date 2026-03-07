@@ -17,7 +17,7 @@ Deployment-specific functions (injected per channel, not core Based):
 
 Everything else is standard Python — variables, functions, imports, control flow, API calls.
 
-> For the full official reference, see the [Based Language Fundamentals](https://github.com/BrainbaseHQ/docs/blob/main/based-language-fundamentals.mdx) documentation.
+> For the full official reference, see the [Based Language Fundamentals](https://docs.usebrainbase.com/language-fundamentals/overview) documentation.
 
 ---
 
@@ -58,7 +58,7 @@ res = talk("System prompt describing the agent's behavior.", False)
 | Argument | Type | Description |
 |-|-|-|
 | prompt | `str` | System prompt for the LLM. Describes the agent's role, personality, and instructions. |
-| include_reason | `bool` | If `True`, the LLM must explain why it matched a condition. Useful for debugging and tracing. |
+| first | `bool` | Controls turn-taking. `True` = AI speaks first (generates a response immediately). `False` = AI waits for the user to speak first. |
 
 `talk()` returns a result object that supports `.ask()` for data extraction. You can also access:
 - `res["next"]` — the matched condition name (sanitized: spaces become underscores, lowercased)
@@ -181,16 +181,16 @@ validation = address.ask(question="Is this a complete US address?",
 
 These are always available in any Based flow, regardless of deployment type.
 
-### `say(message, exact=False)`
+### `say(message, exact=True)`
 
-Send a message directly to the user without calling the LLM. Useful for confirmations, status updates, and scripted responses.
+Send a message directly to the user without calling the LLM. By default, the message is output verbatim (`exact=True`). Pass `exact=False` to allow the AI to rephrase while maintaining meaning.
 
 ```python
 say("Thanks for calling! Let me look that up for you.")
 say("Your order total is $42.50.")
 
-# exact=True outputs the message verbatim (useful for phone numbers, addresses, URLs)
-say("Please navigate to triple-w dot example dot com slash signup", exact=True)
+# exact=False lets the AI rephrase the message naturally
+say("Inform the user their order has been placed successfully.", exact=False)
 ```
 
 ### `done()`
@@ -592,7 +592,7 @@ until "caller has a question about hours":
 For voice deployments, keep these in mind:
 
 - **`say()` is spoken aloud.** Write naturally — avoid URLs, special characters, and abbreviations the TTS won't handle well.
-- **Use `exact=True`** when the TTS must not paraphrase (phone numbers, addresses, URLs).
+- **`say()` defaults to `exact=True`** (verbatim output). This is usually what you want for voice. Use `exact=False` only when you want the AI to rephrase.
 - **`time.sleep(seconds)`** adds a pause. Useful before transfers or after long responses.
 - **Phone numbers in speech:** Format as individual digits: `"five five five, one two three four"`.
 - **Keep responses concise.** Long agent responses feel unnatural in voice. Aim for 1-3 sentences.
@@ -676,13 +676,7 @@ until "customer wants to remove an item":
 
 ### Tracing
 
-Pass `True` as the second argument to `talk()` to enable reason tracing:
-
-```python
-res = talk("Your prompt here.", True)  # True = include_reason
-```
-
-When enabled, the LLM must explain *why* it matched a condition. These reasons are recorded as trace events in the session and visible in deployment logs.
+Reason tracing is a deployment-level setting (not a `talk()` argument). When enabled, the LLM must explain *why* it matched a condition. These reasons are recorded as trace events in the session and visible in deployment logs. It's configured per-deployment, not in your Based code.
 
 ### Common issues
 
@@ -732,6 +726,19 @@ until "caller needs sales":
 ```
 
 You can still use regular Python functions for helper logic (API calls, data processing, etc.) — just keep the `loop/until/talk` structure at the top level. `async def` functions with `.ask()` calls work fine.
+
+### Don't put inline comments after `return`
+
+The Based converter doesn't handle `return  # comment` correctly — the comment gets treated as a return value and produces a syntax error. Put the comment on a separate line instead.
+
+```python
+# BAD — will break the converter
+    return  # go back to loop
+
+# GOOD
+    # go back to loop
+    return
+```
 
 ### `.ask()` is a separate LLM call
 
