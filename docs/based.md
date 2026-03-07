@@ -256,10 +256,10 @@ Transfer the current call to another phone number.
 transfer("+15551234567")
 
 # Transfer with extension (dials after connection, 1s default pause)
-transfer("5302321272", "271")
+transfer("+15551234567", "271")
 
 # Transfer with custom pause before extension
-transfer("5303195426", {"extension": "221", "pauseSeconds": 2})
+transfer("+15559876543", {"extension": "221", "pauseSeconds": 2})
 ```
 
 #### `end_call()`
