@@ -2,6 +2,15 @@
 # Qualifies inbound leads by collecting key info and scoring interest level.
 # Demonstrates state accumulation, API calls, and conditional branching.
 
+# --- For testing without a deployment, uncomment these hardcoded defaults ---
+# variables = {
+#     "agent_name": "Jordan",
+#     "company_name": "Acme Solutions",
+#     "crm_api_url": "",
+#     "sales_transfer_number": "",
+# }
+# ---
+
 import requests
 
 agent_name = variables.get('agent_name', 'Jordan')
@@ -36,7 +45,8 @@ until "caller explains their need or problem":
         example={"need": "automating customer support calls", "industry": "healthcare"}
     )
     lead.update(need)
-    return  # continue conversation
+    # continue conversation
+    return
 until "caller shares their timeline or urgency":
     timeline = res.ask(
         question="What is their timeline?",

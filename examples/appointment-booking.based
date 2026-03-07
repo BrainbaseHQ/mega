@@ -2,6 +2,16 @@
 # Collects patient/customer info, checks availability, and books appointments.
 # Demonstrates nested loops, .ask(), API integration, and multi-step collection.
 
+# --- For testing without a deployment, uncomment these hardcoded defaults ---
+# variables = {
+#     "agent_name": "Sarah",
+#     "business_name": "Riverside Dental",
+#     "services": "cleaning, filling, crown, consultation",
+#     "booking_api_url": "",
+#     "hours": "Monday-Friday 8am-5pm, Saturday 9am-1pm",
+# }
+# ---
+
 import requests
 
 agent_name = variables.get('agent_name', 'Sarah')
@@ -71,7 +81,8 @@ until "caller wants to book a new appointment":
             say("Your appointment has been noted. Our team will confirm shortly.")
     until "caller wants to change something":
         say("No problem. What would you like to change?")
-        return  # back to outer loop
+        # back to outer loop
+        return
 
 until "caller wants to reschedule an existing appointment":
     say("I can help with that. Can you tell me your name and when your current appointment is?")
@@ -94,7 +105,8 @@ until "caller wants to cancel an appointment":
 
 until "caller has a question":
     say("Let me help with that.")
-    return  # back to main loop
+    # back to main loop
+    return
 
 until "caller wants to end the call":
     say(f"Thanks for calling {business_name}. Have a great day!")
