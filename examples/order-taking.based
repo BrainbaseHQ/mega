@@ -1,0 +1,93 @@
+# Restaurant order taking flow
+# Takes phone orders, manages a running cart, and submits to a POS system.
+# Demonstrates loops with return, list manipulation, and .ask() for extraction.
+
+import json
+import requests
+
+agent_name = variables.get('agent_name', 'Sam')
+restaurant_name = variables.get('restaurant_name', 'The Kitchen')
+menu = variables.get('menu', '')
+pos_api_url = variables.get('pos_api_url', '')
+
+order = []
+
+PROMPT = f"""
+You are {agent_name}, taking phone orders at {restaurant_name}.
+Be friendly and efficient. When customers ask what you have, suggest 2-3 items
+rather than reading the entire menu.
+
+If something isn't on the menu, let them know and suggest alternatives.
+After they order something, ask if they'd like anything else.
+
+Menu:
+{menu}
+"""
+
+say(f"Thanks for calling {restaurant_name}! This is {agent_name}. What can I get for you?")
+
+loop:
+    res = talk(PROMPT, False)
+until "customer adds items to their order":
+    items = res.ask(
+        question=f"What did they order? Match item names exactly to the menu. Menu: {menu}",
+        example={"items": [{"name": "chicken tacos", "quantity": 2, "modifications": "no onions"}]}
+    )
+    for item in items.get("items", []):
+        order.append(item)
+        mods = f" ({item['modifications']})" if item.get('modifications') else ""
+        say(f"Added {item.get('quantity', 1)} {item['name']}{mods}.")
+    say("Anything else?")
+    return
+until "customer wants to remove or change an item":
+    change = res.ask(
+        question="What does the customer want to remove or change?",
+        example={"action": "remove", "item_name": "chicken tacos"}
+    )
+    if change.get("action") == "remove":
+        order = [i for i in order if i["name"].lower() != change.get("item_name", "").lower()]
+        say(f"Removed {change.get('item_name')}. You have {len(order)} items. Anything else?")
+    return
+until "customer is done ordering and confirms":
+    if not order:
+        say("It looks like your order is empty. What can I get for you?")
+        return
+    # Read back order
+    summary = ", ".join([f"{i.get('quantity', 1)}x {i['name']}" for i in order])
+    say(f"Your order: {summary}.")
+
+    # Get customer name for the order
+    loop:
+        res = talk("Ask for the customer's name for the order.", False)
+    until "customer gives their name":
+        name_info = res.ask(
+            question="What is the customer's name?",
+            example={"first_name": "Mike"}
+        )
+        customer_name = name_info.get("first_name", "Guest")
+
+        # Submit to POS
+        if pos_api_url:
+            try:
+                result = requests.post(pos_api_url, json={
+                    "customer_name": customer_name,
+                    "items": order
+                })
+                if result.ok:
+                    total = result.json().get("total", "")
+                    say(f"Great, {customer_name}! Your order total is {total}. It'll be ready in about 15 minutes.")
+                else:
+                    say(f"Got it, {customer_name}. Your order will be ready in about 15 minutes.")
+            except Exception as e:
+                say(f"Got it, {customer_name}. Your order will be ready in about 15 minutes.")
+        else:
+            say(f"Got it, {customer_name}. Your order will be ready in about 15 minutes.")
+
+        loop:
+            res = talk("The order has been placed. Wrap up the call naturally.", True)
+        until "conversation reaches a natural end":
+            say(f"Thanks for calling {restaurant_name}! See you soon.")
+            end_call()
+until "customer wants to hear the menu or asks what you have":
+    say("Let me tell you about a few of our popular items.")
+    return

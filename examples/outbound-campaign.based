@@ -1,0 +1,47 @@
+# Outbound campaign flow
+# For scheduled outbound calls — appointment reminders, follow-ups, surveys.
+# Demonstrates working with state dict (contains call metadata in outbound).
+
+agent_name = variables.get('agent_name', 'Riley')
+company_name = variables.get('company_name', 'Riverside Medical')
+campaign_type = variables.get('campaign_type', 'appointment_reminder')
+
+# In outbound calls, state contains campaign data set when the call was initiated
+customer_name = state.get('customer_name', 'there')
+appointment_date = state.get('appointment_date', '')
+appointment_time = state.get('appointment_time', '')
+
+REMINDER_PROMPT = f"""
+You are {agent_name} calling from {company_name}.
+You're calling {customer_name} to remind them about their upcoming appointment
+on {appointment_date} at {appointment_time}.
+
+Be brief and friendly. Confirm they can make it.
+If they need to reschedule, collect their preferred time and let them know
+someone will call back to confirm the new time.
+Don't keep them on the line longer than necessary.
+"""
+
+say(f"Hi, is this {customer_name}? This is {agent_name} calling from {company_name}.")
+
+loop:
+    res = talk(REMINDER_PROMPT, False)
+until "customer confirms they can make the appointment":
+    say(f"Great! We'll see you on {appointment_date} at {appointment_time}. Have a good day!")
+    end_call()
+until "customer needs to reschedule":
+    new_time = res.ask(
+        question="When would they like to reschedule to?",
+        example={"new_date": "next Thursday", "new_time": "morning"}
+    )
+    say(f"Got it. We'll have someone call you back to confirm {new_time.get('new_date', 'the new time')}. Thanks!")
+    end_call()
+until "customer wants to cancel":
+    say("I understand. We'll remove that appointment. Feel free to call us if you'd like to rebook. Have a good day!")
+    end_call()
+until "reached voicemail or no answer":
+    say(f"Hi {customer_name}, this is {agent_name} from {company_name} calling to remind you about your appointment on {appointment_date} at {appointment_time}. Please call us back if you need to reschedule. Thank you!")
+    end_call()
+until "wrong number or person not available":
+    say(f"Sorry to bother you. Have a good day!")
+    end_call()

@@ -1,0 +1,58 @@
+# Inbound call router
+# Routes callers to the right department or person based on their request.
+# Uses flow variables for per-dealership customization.
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+tz = ZoneInfo(variables.get('timezone', 'America/New_York'))
+now = datetime.now(tz)
+formatted_time = now.strftime("%I:%M %p")
+day_of_week = now.strftime("%A")
+
+agent_name = variables.get('agent_name', 'Alex')
+company_name = variables.get('company_name', 'our office')
+directory = variables.get('directory', '{}')
+hours = variables.get('hours_of_operation', 'Monday through Friday, 9am to 5pm')
+default_transfer = variables.get('default_transfer_number', '+15550000000')
+
+PROMPT = f"""
+You are {agent_name}, an AI assistant for {company_name}.
+Today is {day_of_week} and the current time is {formatted_time}.
+Hours of operation: {hours}.
+
+Your job is to listen to the caller and route them to the right department or person.
+If the caller asks for someone specific, check the directory.
+If you can answer a simple question (hours, location), do so directly.
+If unsure where to route, transfer to the main line.
+
+When transferring:
+1. Tell the caller where you're transferring them
+2. Wait for confirmation
+3. Then transfer
+
+Directory:
+{directory}
+"""
+
+say(f"Thank you for calling {company_name}. This is {agent_name}. How can I help you?")
+
+loop:
+    res = talk(PROMPT, False)
+until "caller needs to be transferred and has confirmed":
+    transfer_info = res.ask(
+        question=f"What phone number should the caller be transferred to? Use the directory: {directory}",
+        example={"phone_number": "+15551234567", "department": "Sales"}
+    )
+    number = transfer_info.get('phone_number', default_transfer)
+    say("One moment while I transfer your call.")
+    time.sleep(3)
+    if not number:
+        transfer(default_transfer)
+    transfer(number)
+until "caller's question has been fully answered":
+    say("Is there anything else I can help you with?")
+    return
+until "caller wants to end the call":
+    say(f"Thanks for calling {company_name}. Have a great day!")
+    end_call()

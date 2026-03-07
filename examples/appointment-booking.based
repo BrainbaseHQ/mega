@@ -1,0 +1,101 @@
+# Appointment booking flow
+# Collects patient/customer info, checks availability, and books appointments.
+# Demonstrates nested loops, .ask(), API integration, and multi-step collection.
+
+import requests
+
+agent_name = variables.get('agent_name', 'Sarah')
+business_name = variables.get('business_name', 'Riverside Dental')
+services = variables.get('services', 'cleaning, filling, crown, consultation')
+booking_api = variables.get('booking_api_url', '')
+hours = variables.get('hours', 'Monday-Friday 8am-5pm, Saturday 9am-1pm')
+
+PROMPT = f"""
+You are {agent_name}, the scheduling assistant at {business_name}.
+You help callers book, reschedule, or cancel appointments.
+
+Available services: {services}
+Office hours: {hours}
+
+Be warm, professional, and efficient. Collect one piece of information at a time.
+Don't ask for everything at once — have a natural conversation.
+"""
+
+customer = {}
+appointment = {}
+
+say(f"Thank you for calling {business_name}. This is {agent_name}. How can I help you today?")
+
+loop:
+    res = talk(PROMPT, True)
+until "caller wants to book a new appointment":
+    # Collect customer info
+    loop:
+        res = talk(f"{PROMPT}\nYou're now collecting the caller's name and phone number for booking.", False)
+    until "caller provides their name and contact info":
+        info = res.ask(
+            question="What is the caller's name and phone number?",
+            example={"name": "Jane Smith", "phone": "555-1234"}
+        )
+        customer.update(info)
+
+    # Collect appointment details
+    loop:
+        res = talk(f"{PROMPT}\nYou're now helping the caller choose a service and preferred time. Services: {services}", False)
+    until "caller has chosen a service and time":
+        details = res.ask(
+            question="What service and time does the caller want?",
+            example={"service": "cleaning", "preferred_date": "next Tuesday", "preferred_time": "morning"}
+        )
+        appointment.update(details)
+
+    # Confirm
+    say(f"Let me confirm: {customer.get('name', 'you')} for a {appointment.get('service', 'appointment')} on {appointment.get('preferred_date', '')} in the {appointment.get('preferred_time', '')}. Does that sound right?")
+
+    loop:
+        res = talk("Confirm the appointment details with the caller.", False)
+    until "caller confirms the appointment":
+        if booking_api:
+            try:
+                response = requests.post(booking_api, json={
+                    "customer": customer,
+                    "appointment": appointment
+                })
+                if response.ok:
+                    say("You're all set! We'll send you a confirmation text.")
+                else:
+                    say("I've noted your appointment. Our team will confirm shortly.")
+            except Exception as e:
+                say("I've noted your appointment. Our team will confirm shortly.")
+        else:
+            say("Your appointment has been noted. Our team will confirm shortly.")
+    until "caller wants to change something":
+        say("No problem. What would you like to change?")
+        return  # back to outer loop
+
+until "caller wants to reschedule an existing appointment":
+    say("I can help with that. Can you tell me your name and when your current appointment is?")
+    loop:
+        res = talk(f"{PROMPT}\nThe caller wants to reschedule. Collect their name and current appointment details.", False)
+    until "caller provides reschedule details":
+        info = res.ask(
+            question="What are the current and desired appointment details?",
+            example={"name": "Jane Smith", "current_date": "March 15", "new_date": "March 20", "new_time": "afternoon"}
+        )
+        say(f"Got it. I'll move your appointment to {info.get('new_date', '')} in the {info.get('new_time', '')}. You'll receive a confirmation text.")
+
+until "caller wants to cancel an appointment":
+    say("I'm sorry to hear that. Can you give me your name so I can look up your appointment?")
+    loop:
+        res = talk("Collect the caller's name to look up and cancel their appointment.", False)
+    until "caller provides their name for cancellation":
+        info = res.ask(question="What is the caller's name?", example={"name": "Jane Smith"})
+        say(f"Okay {info.get('name', '')}, your appointment has been cancelled. You're welcome to rebook anytime.")
+
+until "caller has a question":
+    say("Let me help with that.")
+    return  # back to main loop
+
+until "caller wants to end the call":
+    say(f"Thanks for calling {business_name}. Have a great day!")
+    end_call()

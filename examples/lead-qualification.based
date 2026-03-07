@@ -1,0 +1,77 @@
+# Lead qualification flow
+# Qualifies inbound leads by collecting key info and scoring interest level.
+# Demonstrates state accumulation, API calls, and conditional branching.
+
+import requests
+
+agent_name = variables.get('agent_name', 'Jordan')
+company_name = variables.get('company_name', 'Acme Solutions')
+crm_api_url = variables.get('crm_api_url', '')
+transfer_number = variables.get('sales_transfer_number', '')
+
+lead = {}
+
+PROMPT = f"""
+You are {agent_name}, a friendly intake specialist at {company_name}.
+Your job is to learn about the caller's needs and determine if they're a good fit.
+
+Have a natural conversation. Don't interrogate — weave questions into the dialogue.
+Key things to learn:
+- What problem they're trying to solve
+- Their timeline (how soon they need a solution)
+- Their role/company
+- How they heard about us
+
+If the caller seems like a strong fit (clear need, near-term timeline), offer to
+connect them with a specialist. If they're just exploring, offer to send info.
+"""
+
+say(f"Hi, thanks for reaching out to {company_name}! This is {agent_name}. What can I help you with?")
+
+loop:
+    res = talk(PROMPT, True)
+until "caller explains their need or problem":
+    need = res.ask(
+        question="What is the caller's primary need or problem?",
+        example={"need": "automating customer support calls", "industry": "healthcare"}
+    )
+    lead.update(need)
+    return  # continue conversation
+until "caller shares their timeline or urgency":
+    timeline = res.ask(
+        question="What is their timeline?",
+        example={"timeline": "next quarter", "urgency": "high"}
+    )
+    lead.update(timeline)
+    return
+until "caller shares their role or company info":
+    company_info = res.ask(
+        question="What role/company info did they share?",
+        example={"name": "Jane", "role": "VP Operations", "company": "HealthCo", "size": "200 employees"}
+    )
+    lead.update(company_info)
+    return
+until "caller is a strong fit and ready to talk to sales":
+    # Submit lead to CRM
+    if crm_api_url:
+        try:
+            requests.post(crm_api_url, json={"lead": lead, "qualified": True})
+        except Exception as e:
+            print(f"[DEBUG] CRM submission failed: {e}")
+
+    if transfer_number:
+        say("I'd love to connect you with one of our specialists who can walk you through the details. Let me transfer you now.")
+        time.sleep(3)
+        transfer(transfer_number)
+    else:
+        say("One of our specialists will reach out to you shortly. Thanks for your interest!")
+until "caller is just exploring or not ready":
+    if crm_api_url:
+        try:
+            requests.post(crm_api_url, json={"lead": lead, "qualified": False})
+        except Exception as e:
+            pass
+    say("No problem at all! I'll have our team send you some information. Feel free to call back anytime.")
+until "caller wants to end the conversation":
+    say(f"Thanks for calling {company_name}. Have a great day!")
+    end_call()
