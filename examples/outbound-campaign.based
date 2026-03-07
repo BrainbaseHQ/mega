@@ -2,6 +2,14 @@
 # For scheduled outbound calls — appointment reminders, follow-ups, surveys.
 # Demonstrates working with state dict (contains call metadata in outbound).
 
+# --- For testing without a deployment, uncomment these hardcoded defaults ---
+# variables = {
+#     "agent_name": "Riley",
+#     "company_name": "Riverside Medical",
+#     "campaign_type": "appointment_reminder",
+# }
+# ---
+
 agent_name = variables.get('agent_name', 'Riley')
 company_name = variables.get('company_name', 'Riverside Medical')
 campaign_type = variables.get('campaign_type', 'appointment_reminder')

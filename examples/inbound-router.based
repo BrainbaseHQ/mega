@@ -2,6 +2,17 @@
 # Routes callers to the right department or person based on their request.
 # Uses flow variables for per-dealership customization.
 
+# --- For testing without a deployment, uncomment these hardcoded defaults ---
+# variables = {
+#     "agent_name": "Alex",
+#     "company_name": "Acme Corp",
+#     "directory": '{"Sales": "+15551001000", "Support": "+15551002000"}',
+#     "hours_of_operation": "Monday through Friday, 9am to 5pm",
+#     "default_transfer_number": "+15550000000",
+#     "timezone": "America/New_York",
+# }
+# ---
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
 

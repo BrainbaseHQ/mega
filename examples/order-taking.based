@@ -2,6 +2,15 @@
 # Takes phone orders, manages a running cart, and submits to a POS system.
 # Demonstrates loops with return, list manipulation, and .ask() for extraction.
 
+# --- For testing without a deployment, uncomment these hardcoded defaults ---
+# variables = {
+#     "agent_name": "Sam",
+#     "restaurant_name": "The Kitchen",
+#     "menu": "chicken tacos, beef burrito, Caesar salad, fries, large coke, iced tea",
+#     "pos_api_url": "",
+# }
+# ---
+
 import json
 import requests
 
