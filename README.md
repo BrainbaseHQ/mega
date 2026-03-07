@@ -112,7 +112,7 @@ curl "https://studio.brainbaselabs.com/v1/chat/completions\
   -H "x-brainbase-api-key: <your_api_key>" \
   -H 'x-initial-state: {"variables": {}}' \
   -H "Content-Type: application/json" \
-  -d '{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"I need a cleaning"}]}'
+  -d '{"model":"<model>","messages":[{"role":"user","content":"I need a cleaning"}]}'
 ```
 
 ### 6. Deploy to a real channel

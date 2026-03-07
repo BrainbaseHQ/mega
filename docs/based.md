@@ -40,10 +40,9 @@ until "caller wants to end the conversation":
 **How it works:**
 
 1. `talk()` sends the prompt + conversation history to the LLM
-2. Each `until` condition becomes a tool the LLM can call
-3. When the LLM determines a condition is met, it calls the corresponding tool
-4. Execution enters the matching `until` block
-5. After the block executes, the flow ends (unless you `return` to loop again)
+2. Each `until` condition is registered as a possible action
+3. When the LLM determines a condition is met, execution branches to that `until` block
+4. After the block executes, the flow ends (unless you `return` to loop again)
 
 The string in `until "..."` is a natural language description. The LLM decides when it applies. Write conditions that are clear and unambiguous.
 
@@ -60,10 +59,7 @@ res = talk("System prompt describing the agent's behavior.", False)
 | prompt | `str` | System prompt for the LLM. Describes the agent's role, personality, and instructions. |
 | first | `bool` | Controls turn-taking. `True` = AI speaks first (generates a response immediately). `False` = AI waits for the user to speak first. |
 
-`talk()` returns a result object that supports `.ask()` for data extraction. You can also access:
-- `res["next"]` — the matched condition name (sanitized: spaces become underscores, lowercased)
-- `res["response"]` — the LLM's text response to the user
-- `res["tool_args"]` — extracted arguments (if a tool schema condition matched)
+`talk()` returns a result object. Its primary use is calling `.ask()` to extract structured data from the conversation. The engine handles routing to the correct `until` block automatically — you don't need to inspect the result for branching.
 
 The prompt is the system message. It persists across the conversation — you don't need to repeat context. The LLM sees the full message history automatically.
 
@@ -107,13 +103,13 @@ until "user says goodbye":
     say("Goodbye!")
 ```
 
-Use `as variable` to capture the tool arguments. The schema follows the OpenAI function calling format. You can also use a simplified format:
+Use `as variable` to capture the extracted arguments. The schema follows a standard function calling format. You can also use a simplified format:
 
 ```python
 # Simplified — just name, description, parameters
 tool = {"name": "...", "description": "...", "parameters": {...}}
 
-# Full OpenAI format — also works
+# Full format — also works
 tool = {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}}}
 ```
 
@@ -696,7 +692,7 @@ Based is powerful but has constraints you should understand:
 
 ### Based constructs must live at the top level
 
-In v2, `loop:`, `until:`, and `talk()` constructs must exist at the top level of your script or inside other `loop/until` blocks. **They cannot be placed inside regular Python functions.** This is because Based flows are compiled into resumable execution units — the engine needs to be able to pause and resume at any `talk()` boundary across requests, which requires the conversation structure to be statically analyzable at the top level.
+In v2, `loop:`, `until:`, and `talk()` constructs must exist at the top level of your script or inside other `loop/until` blocks. **They cannot be placed inside regular Python functions.** The engine needs to pause and resume execution at each `talk()` boundary, so the conversation structure must be defined at the top level.
 
 This means you can't do:
 
@@ -744,7 +740,6 @@ The Based converter doesn't handle `return  # comment` correctly — the comment
 
 Each `.ask()` invocation makes an independent LLM call for data extraction. It doesn't share context with the main `talk()` conversation. This means:
 
-- It uses a fixed model (not configurable per-call)
 - It only sees the data you pass to it (the object it's called on), not the full conversation history
 - Multiple `.ask()` calls add latency — batch extractions when possible
 
