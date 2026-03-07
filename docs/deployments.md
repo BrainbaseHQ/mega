@@ -10,7 +10,6 @@ Inbound and outbound phone calls. The most common deployment type.
 |-|-|-|
 | `flowId` | Yes | The Based flow to execute |
 | `phoneNumber` | Yes | Phone number to receive/make calls (E.164) |
-| `engineModel` | No | LLM model (default: `gpt-4o`) |
 | `voiceId` | No | Voice for TTS |
 | `language` | No | Language code |
 | `interruptionSensitivity` | No | How easily the user can interrupt (0-1) |
@@ -30,7 +29,6 @@ HTTP-based chat interface. Users send messages via API and receive responses.
 | Field | Required | Description |
 |-|-|-|
 | `flowId` | Yes | The Based flow to execute |
-| `engineModel` | No | LLM model |
 | `welcomeMessage` | No | First message shown to user |
 | `allowedUsers` | No | Restrict to specific user IDs |
 
@@ -80,12 +78,6 @@ OpenAI-compatible API endpoint for programmatic access.
 
 API deployments expose an OpenAI-compatible `/v1/chat/completions` endpoint. Use any OpenAI SDK to interact with the flow.
 
-## Supported LLM models
+## LLM model selection
 
-| Provider | Models |
-|-|-|
-| OpenAI | `gpt-4.1`, `gpt-4.1-mini`, `gpt-4o`, `gpt-4o-mini`, `o3`, `o4-mini` |
-| Anthropic | `claude-sonnet-4-5`, `claude-opus-4-5` |
-| Google | `gemini-2.5-flash`, `gemini-2.0-flash` |
-
-The model is set per-deployment. If not specified, defaults to `gpt-4o`.
+Model selection and routing is managed by the Brainbase team. The platform supports models from multiple providers (OpenAI, Anthropic, Google). Contact the Brainbase team for model configuration.

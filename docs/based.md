@@ -702,7 +702,9 @@ Based is powerful but has constraints you should understand:
 
 ### Based constructs must live at the top level
 
-In v2, `loop:`, `until:`, and `talk()` constructs must exist at the top level of your script or inside other `loop/until` blocks. **They cannot be placed inside regular Python functions.** This means you can't do:
+In v2, `loop:`, `until:`, and `talk()` constructs must exist at the top level of your script or inside other `loop/until` blocks. **They cannot be placed inside regular Python functions.** This is because Based flows are compiled into resumable execution units — the engine needs to be able to pause and resume at any `talk()` boundary across requests, which requires the conversation structure to be statically analyzable at the top level.
+
+This means you can't do:
 
 ```python
 # THIS DOES NOT WORK in v2
@@ -764,4 +766,6 @@ The LLM decides which `until` condition matches. This means:
 
 ## V1 engine note
 
-The v2 Based engine is the current standard. A legacy v1 engine exists and is still in use for some high-volume deployments. The syntax described in this document is for v2. V1 flows use similar constructs but run on a different runtime with some behavioral differences. New flows should always target v2.
+The v2 Based engine is the current standard. A legacy v1 engine also exists. The syntax described in this document is for v2. V1 flows use similar constructs but run on a different runtime with some behavioral differences. New flows should always target v2.
+
+If you're working with an existing v1 agent and need guidance, contact the Brainbase team at abhinav@brainbaselabs.com.

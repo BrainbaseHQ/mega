@@ -92,13 +92,13 @@ Based is the language used to define conversational flows on Brainbase. It compi
 
 See [docs/based.md](docs/based.md) for the complete reference.
 
-## For partners
+## Documentation
 
-If you're a Brainbase partner, Mega is how your engineering team can programmatically manage deployments at scale. Set your API key, open the repo in your preferred AI tool, and describe what you need. The AI has full context on Based, the platform's data model, and your available APIs.
+The Based language reference in `docs/based.md` is the canonical source. For the latest official documentation, see the [Brainbase docs](https://docs.brainbase.com).
 
 ## Contributing
 
-This is an open-source project maintained by [Brainbase](https://brainbase.com). Issues and pull requests are welcome.
+Issues and pull requests are welcome.
 
 ## License
 

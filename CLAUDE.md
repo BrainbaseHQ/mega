@@ -18,6 +18,8 @@ Read these before writing any Based code or interacting with the platform:
 - `docs/deployments.md` — Deployment types and their configuration
 - `examples/` — Production-quality Based flows you can reference and adapt
 
+For the latest official Brainbase documentation, fetch from https://docs.brainbase.com. The docs in this repo are the canonical Based reference but platform docs may be updated independently.
+
 ## Writing Based flows
 
 Based is Python + a few conversation primitives. The core pattern:

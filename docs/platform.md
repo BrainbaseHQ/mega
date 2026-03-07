@@ -50,7 +50,6 @@ A deployment is a live instance of a worker+flow, connected to a channel (phone 
 | `name` | Deployment name |
 | `type` | Channel type (see below) |
 | `status` | `ACTIVE`, `CREATING`, `INACTIVE` |
-| `engineModel` | LLM model to use (e.g., `gpt-4.1-mini`, `gemini-2.5-flash`) |
 
 See [deployments.md](deployments.md) for full details on each type.
 
