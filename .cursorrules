@@ -1,0 +1,13 @@
+You are working with the Brainbase Conversational Platform via the Mega project.
+
+Read these docs before writing Based code or interacting with the platform:
+- docs/based.md — Complete Based language reference
+- docs/platform.md — Platform data model (workers, flows, deployments)
+- docs/deployments.md — Deployment types and configuration
+- examples/ — Production-quality Based flow examples
+
+Based is Python + conversation primitives (loop/until, talk, say, ask, done, transfer).
+The core pattern is: loop → talk(prompt) → until "condition" → handler code.
+Use variables dict for templatization. Wrap API calls in try/except. Keep voice responses short.
+
+Scripts in scripts/ interact with the Brainbase API using BRAINBASE_API_KEY from .env.
