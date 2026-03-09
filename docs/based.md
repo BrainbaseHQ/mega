@@ -360,6 +360,10 @@ loop:
 
 Flow variables are the primary mechanism for templatizing flows — write one flow, deploy it many times with different variables per deployment.
 
+> **v2 engine limitation:** Flow-level `variables` configured in the dashboard are **not** automatically injected into the v2 execution context. The `variables` dict is only available if explicitly passed via the `x-initial-state` header (as a `variables` key in the JSON). Voice deployments auto-populate `initial_state` from Twilio call metadata (e.g. `state.get('Caller')`), but dashboard-configured flow variables are not hydrated automatically.
+>
+> **Workaround:** For flows that target a single deployment (e.g. a specific dealership), hardcode configuration values directly in the flow instead of using `variables.get()`. For templatized flows, ensure the caller (API client or deployment service) passes `variables` in `x-initial-state`.
+
 ---
 
 ## Making API calls
@@ -722,6 +726,26 @@ until "caller needs sales":
 ```
 
 You can still use regular Python functions for helper logic (API calls, data processing, etc.) — just keep the `loop/until/talk` structure at the top level. `async def` functions with `.ask()` calls work fine.
+
+### `variables` dict not auto-injected in v2
+
+The `variables` dict documented above is **not** automatically available in the v2 runtime. Using `variables.get(...)` at the top level will crash the flow with `name 'variables' is not defined`. The engine only has access to values passed via `x-initial-state`. For single-deployment flows, hardcode values directly. See the [Flow variables](#flow-variables) section for details and workarounds.
+
+### `break` inside `for` loops in `until` blocks
+
+The Based transpiler converts `loop/until` blocks into Python constructs that can conflict with Python's `break` statement. Using `break` inside a `for` loop within an `until` handler may produce `'break' outside loop` errors. Use list comprehensions or flag variables instead:
+
+```python
+# BAD — may break the transpiler
+for s in services:
+    if s["name"] == target:
+        matched = s
+        break
+
+# GOOD — use list comprehension
+matches = [s for s in services if s["name"] == target]
+matched = matches[0] if len(matches) > 0 else None
+```
 
 ### Don't put inline comments after `return`
 
