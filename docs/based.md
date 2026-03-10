@@ -217,15 +217,15 @@ extract("shipping_address", {
 })
 
 # Common pattern: extract with .ask() then save
-# IMPORTANT: .ask() returns an AskProxy, not a plain dict — wrap with dict() for extract()
+# IMPORTANT: .ask() returns an AskProxy, not a plain dict — use .to_json() for extract()
 order = res.ask(
     question="What did the customer order?",
     example={"items": [{"name": "latte", "quantity": 1}], "total": 5.50}
 )
-extract("order_details", dict(order))
+extract("order_details", order.to_json())
 ```
 
-Keys cannot start with `_` (reserved for internal use). Values must be JSON-serializable. Note that `.ask()` returns an `AskProxy` object which is **not** directly JSON-serializable — always wrap with `dict()` before passing to `extract()`.
+Keys cannot start with `_` (reserved for internal use). Values must be JSON-serializable. Note that `.ask()` returns an `AskProxy` object which is **not** directly JSON-serializable — always call `.to_json()` before passing to `extract()`.
 
 ### `print()`
 
@@ -763,16 +763,20 @@ The Based converter doesn't handle `return  # comment` correctly — the comment
 
 ### `.ask()` returns an `AskProxy`, not a plain dict
 
-The object returned by `.ask()` is an `AskProxy` that behaves like a dict (supports `.get()`, bracket access) but is **not** JSON-serializable. If you pass it directly to `extract()`, you'll get `Object of type AskProxy is not JSON serializable`. Always wrap with `dict()`:
+The object returned by `.ask()` is an `AskProxy` that behaves like a dict (supports `.get()`, bracket access) but is **not** JSON-serializable. `dict()` also does not work — it tries to iterate with integer keys and fails with `KeyError: 0`. Use `.to_json()` instead:
 
 ```python
 # BAD — will crash at runtime
 info = res.ask(question="...", example={...})
 extract("info", info)  # AskProxy is not JSON serializable
 
-# GOOD
+# ALSO BAD — dict() fails with KeyError: 0
 info = res.ask(question="...", example={...})
 extract("info", dict(info))
+
+# GOOD — use .to_json()
+info = res.ask(question="...", example={...})
+extract("info", info.to_json())
 ```
 
 ### `.ask()` is a separate LLM call
