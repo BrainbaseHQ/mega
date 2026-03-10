@@ -3,3 +3,6 @@
 node_modules/
 .DS_Store
 *.log
+
+# Customer flow files — contain private client data, never commit to this public repo
+flows/
