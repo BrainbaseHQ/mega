@@ -117,7 +117,7 @@ until "customer wants to schedule an appointment or agrees to come in":
             "is_tentative": False
         }
     )
-    extract("appointment", appointment)
+    extract("appointment", dict(appointment))
     name = appointment.get('customer_name', '')
     date = appointment.get('date', 'tomorrow')
     time_slot = appointment.get('time', '11 AM')
@@ -166,7 +166,7 @@ until "customer wants to end the conversation or says goodbye":
             "appointment_scheduled": False
         }
     )
-    extract("lead_info", lead_info)
+    extract("lead_info", dict(lead_info))
     say(f"Thank you for calling {dealership_name}. Have a wonderful day!")
     end_call()
 until "customer's question has been answered and the conversation should continue":

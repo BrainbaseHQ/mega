@@ -217,14 +217,15 @@ extract("shipping_address", {
 })
 
 # Common pattern: extract with .ask() then save
+# IMPORTANT: .ask() returns an AskProxy, not a plain dict — wrap with dict() for extract()
 order = res.ask(
     question="What did the customer order?",
     example={"items": [{"name": "latte", "quantity": 1}], "total": 5.50}
 )
-extract("order_details", order)
+extract("order_details", dict(order))
 ```
 
-Keys cannot start with `_` (reserved for internal use). Values must be JSON-serializable.
+Keys cannot start with `_` (reserved for internal use). Values must be JSON-serializable. Note that `.ask()` returns an `AskProxy` object which is **not** directly JSON-serializable — always wrap with `dict()` before passing to `extract()`.
 
 ### `print()`
 
@@ -758,6 +759,20 @@ The Based converter doesn't handle `return  # comment` correctly — the comment
 # GOOD
     # go back to loop
     return
+```
+
+### `.ask()` returns an `AskProxy`, not a plain dict
+
+The object returned by `.ask()` is an `AskProxy` that behaves like a dict (supports `.get()`, bracket access) but is **not** JSON-serializable. If you pass it directly to `extract()`, you'll get `Object of type AskProxy is not JSON serializable`. Always wrap with `dict()`:
+
+```python
+# BAD — will crash at runtime
+info = res.ask(question="...", example={...})
+extract("info", info)  # AskProxy is not JSON serializable
+
+# GOOD
+info = res.ask(question="...", example={...})
+extract("info", dict(info))
 ```
 
 ### `.ask()` is a separate LLM call
