@@ -595,7 +595,8 @@ For voice deployments, keep these in mind:
 - **`say()` is spoken aloud.** Write naturally — avoid URLs, special characters, and abbreviations the TTS won't handle well.
 - **`say()` defaults to `exact=True`** (verbatim output). This is usually what you want for voice. Use `exact=False` only when you want the AI to rephrase.
 - **`time.sleep(seconds)`** adds a pause (auto-converted to `asyncio.sleep()`). Useful before transfers or after long responses.
-- **Always `time.sleep()` before `end_call()` or `transfer()`.** Without a pause, the call will hang up or transfer before the preceding `say()` finishes speaking. Use `time.sleep(2)` before `transfer()` and `time.sleep(3)` before `end_call()`.
+- **Always `time.sleep()` before `end_call()` or `transfer()`.** Without a pause, the call will hang up or transfer before the preceding `say()` finishes speaking. Use `time.sleep(2)` before `transfer()` and `time.sleep(1)` before `end_call()`.
+- **Put `say()` before any slow operations in `until` blocks.** `say()` is non-blocking — it queues TTS immediately. If you run `.ask()` (which takes 1-2s) before `say()`, the caller hears dead air. Put the `say()` first so TTS starts while the extraction runs in parallel. Example: in a goodbye handler, `say("Goodbye!")` first, then do `.ask()` + `extract()`, then `end_call()`.
 - **Phone numbers in speech:** Format as individual digits: `"five five five, one two three four"`.
 - **Keep responses concise.** Long agent responses feel unnatural in voice. Aim for 1-3 sentences.
 
