@@ -38,7 +38,7 @@ Key rules:
 - `say()` sends a message without LLM involvement
 - `return` inside an `until` block goes back to the enclosing `loop`
 - Always wrap API calls in `try/except`
-- Use `variables` dict for per-deployment configuration (templatization)
+- In v2, `variables` dict is **not** auto-injected — hardcode config values directly (see `docs/based.md` for details)
 
 ## Platform interaction
 
@@ -61,14 +61,14 @@ Scripts in `scripts/` interact with the Brainbase API. They require a `BRAINBASE
 1. Read the requirements document
 2. Identify the conversation flow — what are the phases? what decisions does the agent make?
 3. Write the Based flow, using `loop/until` for each decision point
-4. Use `variables` for anything that differs per deployment (names, hours, phone numbers)
+4. Hardcode configuration values directly in the flow (v2 does not auto-inject `variables`)
 5. Test with the studio or a chat deployment before going live on voice
 
 ### Scaling one deployment to many
 1. Identify what varies between instances (name, location, hours, phone number, etc.)
-2. Extract those into `variables` in the flow
+2. Create a separate flow file per instance with those values hardcoded at the top
 3. Create a worker per instance (or reuse one worker with multiple deployments)
-4. Deploy with different variable values per instance
+4. Deploy each with its own flow
 
 ### Debugging a production flow
 1. Pull deployment logs — look at transcripts and trace events
@@ -84,3 +84,4 @@ Scripts in `scripts/` interact with the Brainbase API. They require a `BRAINBASE
 - Voice flows should keep `say()` messages short (1-3 sentences)
 - `transfer()` and `end_call()` only work in voice deployments
 - `time.sleep()` is automatically converted to non-blocking `asyncio.sleep()`
+- **Voice deployment v2 routing:** When creating voice deployments via the API, you **must** pass `"externalConfig": { "engineVersion": "v2" }` to route to the v2 voice server. The API does not auto-read the worker's `engineVersion`. Without this, deployments route to v1.5. See `docs/deployments.md` for details.
