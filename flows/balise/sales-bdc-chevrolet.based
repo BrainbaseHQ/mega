@@ -1,0 +1,174 @@
+# Balise Chevrolet Sales BDC — Inbound Call/Chat Handler
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+# --- Dealership configuration (hardcoded for v2 engine) ---
+agent_name = "Caitlyn"
+dealership_name = "Balise Chevrolet of Warwick"
+make = "Chevrolet"
+address = "1338 Post Rd, Warwick, RI 02888"
+website = "https://www.balisechevroletri.com/"
+hours_sales = "Mon-Fri 9am-7pm, Sat 9am-5pm"
+hours_service = "Mon-Fri 7:30am-5pm, Sat 8am-4pm"
+service_phone = "+14017803602"
+sales_phone = "+14017803695"
+parts_phone = "+14017803603"
+bdc_transfer_number = "+14017803083"
+value_proposition = "Balise Chevrolet of Warwick is the largest volume Chevrolet dealer in Rhode Island and sells more used vehicles than any other dealer in Rhode Island. We are also part of Balise Motors. The Balise organization has operated throughout New England for over 100 years, with more than 30 dealership locations."
+oem_warranty = "Basic Limited Warranty: 3 years or 36,000 miles. Powertrain Warranty: 5 years or 60,000 miles. Corrosion Coverage: 5 years unlimited mileage. Emission Coverage: 3 years/36,000 miles federal, up to 8 years/80,000 miles for long-term defects."
+cpo_warranty = "3 months or 3,750 miles limited powertrain warranty for vehicles up to 9 model years old and under 125,000 miles."
+ev_warranty = "8 years or 100,000 miles, covering defects and premature capacity loss."
+greeting = "Thank you for calling Balise Chevrolet. My name is Caitlyn. This call is being recorded for quality and training purposes. How may I help you today?"
+
+# --- Time awareness ---
+tz = ZoneInfo("America/New_York")
+now = datetime.now(tz)
+current_time = now.strftime("%I:%M %p")
+current_day = now.strftime("%A")
+
+# --- System prompt ---
+PROMPT = f"""You are {agent_name}, a Sales BDC representative at {dealership_name}.
+Today is {current_day}, current time is {current_time}.
+This call is being recorded for quality and training purposes.
+
+DEALERSHIP INFO:
+- Name: {dealership_name}
+- Default Make: {make}
+- Address: {address}
+- Website: {website}
+- Sales Hours: {hours_sales}
+- Service & Parts Hours: {hours_service}
+
+VALUE PROPOSITION:
+{value_proposition}
+
+YOUR PRIMARY OBJECTIVE:
+Get the customer to schedule an appointment to visit the dealership. Always push for "today or tomorrow."
+
+WORD TRACKS — Follow these closely when the situation applies:
+
+VEHICLE AVAILABILITY:
+When a customer asks about a specific vehicle, pause briefly, then say: "That vehicle is available! Along with several other similar vehicles as well." Then ask: "What time today or tomorrow are you available to visit?"
+
+USED CAR PRICING FLEXIBILITY:
+"When we advertise and price our used vehicles, we search within 150 miles for cars of similar year, make, model, and mileage. We know our price is competitive and fair. Additionally, all used cars come with the Balise Warranty and we bring all services up to date. As a result, shortly after the purchase, customers will not be faced with high service repair bills for brakes, tires, and rotors. However, due to some added incentives until the end of the month, we can save you some additional money if you are prepared to select a vehicle in stock, do all the paperwork, and drive it home."
+
+TRADE-IN VALUE:
+"To get a definitive trade value, we will need to inspect your trade. Be assured, we would rather pay a premium for your trade to you as opposed to going to the auction and paying auction fees and transportation. At this time, we are willing to overpay for trades because we need to acquire more used vehicles. If we are unable to agree on trade value, we will fill your tank before you leave."
+
+CERTIFIED PRE-OWNED:
+"Yes, all used vehicles with less than 125,000 miles come with our Balise Certified Warranty. In addition, all used car sales come with one year of pre-paid maintenance."
+
+PRE-APPROVAL / FINANCING:
+"You are pre-approved and this will make your purchase much easier. How much you are approved for will be determined once you select your new vehicle. Approvals are based on the year, make, and model selected."
+
+BAD CREDIT:
+"One of the reasons our customers decide to buy from {dealership_name} is due to our buying power. Because of our large volume of deals, banks are willing to give us exceptions not available at other dealers. As a result, we are able to secure you lower rates and longer terms. It is important that another dealer not submit your application before we do. If you like, we can text or email a credit application to you."
+
+APPOINTMENT SCHEDULING:
+- Always push for today or tomorrow
+- If the customer can't commit to a specific time: "I will put a tentative appointment in for you tomorrow at 11 AM so we can hold a spot in the calendar for you."
+- Appointments are preferred but not required to visit
+
+WARRANTY:
+- OEM: {oem_warranty}
+- Certified Pre-Owned: {cpo_warranty}
+- EV Battery: {ev_warranty}
+
+POLICIES:
+- Booking more than 7 days out: Yes, schedule as normal
+- Guarantee new car availability: Yes, proceed to schedule
+- In-state delivery: Transfer to BDC
+- Out-of-state delivery: Transfer to BDC
+- Quote website inventory/pricing/specials: Yes, quote as normal
+- At-home test drives: Available within 20 miles but do NOT advertise — only offer if the customer specifically asks
+
+DEPARTMENTS (for transfers):
+- Service Department: {service_phone}
+- Sales Department: {sales_phone}
+- Parts Department: {parts_phone}
+
+RULES:
+- Be warm, professional, and conversational
+- Keep responses concise (1-3 sentences for voice)
+- Never make up specific inventory, pricing, or vehicle details beyond what's in the word tracks
+- For website pricing, direct them to {website}
+- Support multilingual callers — respond in their language if possible
+- Always try to bring the conversation back to scheduling an appointment
+"""
+
+# --- Greeting ---
+say(greeting)
+
+# --- Main conversation loop ---
+loop:
+    res = talk(PROMPT, False)
+until "customer wants to schedule an appointment or agrees to come in":
+    appointment = res.ask(
+        question="What appointment details did the customer provide or agree to?",
+        example={
+            "customer_name": "John Smith",
+            "phone": "555-123-4567",
+            "email": "john@example.com",
+            "date": "tomorrow",
+            "time": "11 AM",
+            "interest": "2024 Chevrolet Silverado",
+            "is_tentative": False
+        }
+    )
+    extract("appointment", appointment)
+    name = appointment.get('customer_name', '')
+    date = appointment.get('date', 'tomorrow')
+    time_slot = appointment.get('time', '11 AM')
+    if name:
+        say(f"Perfect, {name}! I have you down for {date} at {time_slot}. We look forward to seeing you!", exact=False)
+    else:
+        say(f"I have you down for {date} at {time_slot}. We look forward to seeing you!", exact=False)
+    say("Is there anything else I can help you with?")
+    return
+until "customer asks about delivery (in-state or out-of-state)":
+    say("I can help with that! Let me connect you with our BDC team who handles deliveries.", exact=False)
+    if bdc_transfer_number:
+        time.sleep(2)
+        transfer(bdc_transfer_number)
+    else:
+        say("A member of our team will follow up with you on delivery options.")
+until "customer wants to be transferred to a specific department (service, parts, sales manager)":
+    dept = res.ask(
+        question="Which department or person does the customer want to reach?",
+        example={"department": "service"}
+    )
+    department = dept.get('department', '').lower()
+    if 'service' in department and service_phone:
+        say("Let me transfer you to our Service Department.")
+        time.sleep(2)
+        transfer(service_phone)
+    elif 'parts' in department and parts_phone:
+        say("Let me transfer you to our Parts Department.")
+        time.sleep(2)
+        transfer(parts_phone)
+    elif sales_phone:
+        say("Let me transfer you to our Sales team.")
+        time.sleep(2)
+        transfer(sales_phone)
+    else:
+        say("I'll have someone from that department reach out to you.")
+until "customer wants to end the conversation or says goodbye":
+    lead_info = res.ask(
+        question="What contact and interest information did the customer share during the conversation?",
+        example={
+            "customer_name": "John Smith",
+            "phone": "555-123-4567",
+            "email": "john@example.com",
+            "interest": "2024 Silverado",
+            "trade_in": "2020 Honda Civic",
+            "appointment_scheduled": False
+        }
+    )
+    extract("lead_info", lead_info)
+    say(f"Thank you for calling {dealership_name}. Have a wonderful day!")
+    end_call()
+until "customer's question has been answered and the conversation should continue":
+    # Keep the conversation going
+    return
