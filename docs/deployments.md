@@ -16,6 +16,19 @@ Inbound and outbound phone calls. The most common deployment type.
 | `maxCallDuration` | No | Max call length in seconds |
 | `backupPhoneNumber` | No | Fallback number if transfer fails |
 
+> **v2 engine routing:** The monorepo API does **not** automatically read the worker's `engineVersion` when creating a voice deployment. It only checks `externalConfig.engineVersion` in the request body. If omitted, the deployment routes to the **v1.5 voice server** regardless of the worker's engine version. To route to the v2 conversational-voice server, you must explicitly pass `engineVersion` in the request:
+>
+> ```json
+> {
+>   "name": "My Voice Deployment",
+>   "flowId": "flow_...",
+>   "phoneNumber": "+15551234567",
+>   "externalConfig": { "engineVersion": "v2" }
+> }
+> ```
+>
+> This is a known monorepo bug — the API should inherit `engineVersion` from the worker, but currently does not.
+
 Voice deployments support:
 - Call transfer via `transfer(phone_number)` in Based
 - Outbound campaigns (scheduled batch calls)
