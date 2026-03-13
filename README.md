@@ -140,6 +140,49 @@ Deploy it 40 times with different values per office. Tell Mega:
 
 It reads the spreadsheet, creates workers, and deploys each with the right variables.
 
+## Testing v1 engine flows
+
+For workers running on the v1 engine, you can test flows over WebSocket using `test_v1_engine.py`. This connects directly to the engine, sends a scripted sequence of user messages, and streams agent responses in real time.
+
+**Setup:**
+
+```bash
+pip install websockets
+# Make sure BRAINBASE_API_KEY is set in .env
+```
+
+**Basic usage:**
+
+```bash
+python scripts/test_v1_engine.py <worker_id> <flow_id> "message 1" "message 2" ...
+```
+
+**Example — multi-turn booking flow:**
+
+```bash
+python scripts/test_v1_engine.py worker_abc123 flow_def456 \
+  "I'd like to book an appointment" \
+  "My email is test@example.com" \
+  "Yes that's correct" \
+  "Tomorrow at 2 PM" \
+  --timeout 45
+```
+
+**Output** streams to stdout in real time — agent responses as they arrive, plus tool calls and context returns for debugging. Pipe to a file if you want to save a transcript:
+
+```bash
+python scripts/test_v1_engine.py worker_abc flow_def "Hello" > transcript.txt 2>&1
+```
+
+**Options:**
+
+| Flag | Default | Description |
+|-|-|-|
+| `--model` | `gpt-4o` | LLM model to use |
+| `--state '{"key":"val"}'` | `{}` | Initial state JSON passed to the flow |
+| `--no-streaming` | off | Get full responses instead of streaming |
+| `--timeout` | `60` | Max seconds to wait for each agent response |
+
 ## What's inside
 
 ```
@@ -155,7 +198,8 @@ mega/
 │   ├── lead-qualification.based
 │   └── outbound-campaign.based
 ├── scripts/
-│   └── bb.sh              # CLI wrapper for the Brainbase API
+│   ├── bb.sh              # CLI wrapper for the Brainbase API
+│   └── test_v1_engine.py  # WebSocket test client for v1 engine flows
 ├── CLAUDE.md              # Claude Code context
 ├── .cursorrules           # Cursor context
 └── AGENTS.md              # Codex context

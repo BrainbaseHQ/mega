@@ -8,6 +8,17 @@ Read these docs before writing Based code or interacting with the platform:
 
 Based is Python + conversation primitives (loop/until, talk, say, ask, done, transfer).
 The core pattern is: loop → talk(prompt) → until "condition" → handler code.
-Use variables dict for templatization. Wrap API calls in try/except. Keep voice responses short.
+Wrap API calls in try/except. Keep voice responses short.
+In v2, `variables` dict is NOT auto-injected — hardcode config values directly in flows.
 
 Scripts in scripts/ interact with the Brainbase API using BRAINBASE_API_KEY from .env.
+
+## Mandatory workflow
+
+When writing or modifying flows, always follow this order:
+1. Write the flow
+2. Test via the OAI-compatible engine (see README or CLAUDE.md "Testing flows" section) — run at least 2-3 turns
+3. Fix issues found in testing
+4. Only then deploy to a live channel
+
+Do NOT use chat deployments for testing — they are deprecated. The OAI engine is the only testing interface.
