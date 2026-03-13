@@ -142,39 +142,34 @@ It reads the spreadsheet, creates workers, and deploys each with the right varia
 
 ## Testing v1 engine flows
 
-For workers running on the v1 engine, you can test flows over WebSocket using `test_v1_engine.py`. This connects directly to the engine, sends a scripted sequence of user messages, and streams agent responses in real time.
+Open `mega/` in your AI tool (Cursor, Claude Code, Codex, etc.), make sure `BRAINBASE_API_KEY` is set in `.env`, and ask it to test your flow. The AI will use `scripts/test_v1_engine.py` to run a live WebSocket session against the v1 engine, then report back with the results.
 
-**Setup:**
+**Quick test** — provide the worker/flow IDs and the messages to send:
+
+> Test this v1 engine flow: worker_abc / flow_def. Send these messages in order: "Hello", "I'd like to book an appointment", "Tomorrow at 2 PM". Tell me how the agent responded at each step.
+
+**Thorough test** — let the AI figure out what to test by reading the flow first:
+
+> Fetch the flow code for worker_abc / flow_def using bb.sh, read it, and identify the key conversation branches. Then run a test session for each branch and give me a report on which ones work correctly.
+
+**Test a specific feature** — point the AI at what matters:
+
+> I need to test the hot deals functionality in worker_abc / flow_def. The flow calls a tee times API that returns hot deal data. Figure out which inputs trigger each hot deals branch, run the tests, and report back.
+
+The AI handles everything: fetching the flow, understanding the branches, choosing test inputs, running the sessions, and analyzing the results.
+
+### Setup
 
 ```bash
 pip install websockets
-# Make sure BRAINBASE_API_KEY is set in .env
+# Set BRAINBASE_API_KEY in .env
 ```
 
-**Basic usage:**
+### Script reference
 
 ```bash
 python scripts/test_v1_engine.py <worker_id> <flow_id> "message 1" "message 2" ...
 ```
-
-**Example — multi-turn booking flow:**
-
-```bash
-python scripts/test_v1_engine.py worker_abc123 flow_def456 \
-  "I'd like to book an appointment" \
-  "My email is test@example.com" \
-  "Yes that's correct" \
-  "Tomorrow at 2 PM" \
-  --timeout 45
-```
-
-**Output** streams to stdout in real time — agent responses as they arrive, plus tool calls and context returns for debugging. Pipe to a file if you want to save a transcript:
-
-```bash
-python scripts/test_v1_engine.py worker_abc flow_def "Hello" > transcript.txt 2>&1
-```
-
-**Options:**
 
 | Flag | Default | Description |
 |-|-|-|
