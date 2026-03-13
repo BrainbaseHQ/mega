@@ -62,7 +62,9 @@ Scripts in `scripts/` interact with the Brainbase API. They require a `BRAINBASE
 2. Identify the conversation flow — what are the phases? what decisions does the agent make?
 3. Write the Based flow, using `loop/until` for each decision point
 4. Hardcode configuration values directly in the flow (v2 does not auto-inject `variables`)
-5. Test with the studio or a chat deployment before going live on voice
+5. **Test the flow via the OAI-compatible engine** before creating any live deployment (see [Testing flows](#testing-flows) below)
+6. Fix any issues, iterate until the flow works end-to-end
+7. Only then deploy to a live channel (voice, SMS, etc.)
 
 ### Scaling one deployment to many
 1. Identify what varies between instances (name, location, hours, phone number, etc.)
@@ -76,6 +78,25 @@ Scripts in `scripts/` interact with the Brainbase API. They require a `BRAINBASE
 3. Check if conditions are too narrow/broad
 4. Check if the prompt needs more context or guardrails
 5. Update the flow and monitor
+
+## Testing flows
+
+**Always test flows via the OAI-compatible engine before deploying to any live channel.** This is a mandatory step, not optional. The engine is the single testing interface for all flows.
+
+```bash
+curl "https://studio.brainbaselabs.com/v1/chat/completions\
+?agent_id=<worker_id>&session_id=test-001" \
+  -H "Authorization: Bearer <engine_key>" \
+  -H "x-brainbase-api-key: <your_api_key>" \
+  -H 'x-initial-state: {}' \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4.1","messages":[{"role":"user","content":"Hello"}]}'
+```
+
+- Use the same `session_id` across requests to continue a multi-turn conversation
+- Run at least 2-3 turns to verify the full conversation flow before deploying
+- `end_call()` and `transfer()` are only injected in voice deployments — they will error in engine tests. Wrap them in `try/except` with `done()` as fallback if you want the flow to be testable outside voice.
+- Do **not** use chat deployments for testing — they are deprecated. The OAI engine replaces them.
 
 ## Important constraints
 
