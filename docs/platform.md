@@ -114,3 +114,51 @@ curl -H "x-api-key: YOUR_API_KEY" https://api.brainbase.com/api/workers
 | `/api/workers/:workerId/deployments/voice` | POST | Create voice deployment |
 | `/api/workers/:workerId/resources/:type` | GET | List resources (link/file) |
 | `/api/workers/:workerId/resources/query` | POST | Query knowledge base |
+| `/api/workers/:workerId/deploymentLogs/voice` | GET | List voice deployment logs |
+| `/api/workers/:workerId/deploymentLogs/voice/:logId` | GET | Get a voice deployment log |
+| `/api/workers/:workerId/deploymentLogs/chat` | GET | List chat deployment logs |
+| `/api/workers/:workerId/deploymentLogs/chat/:logId` | GET | Get a chat deployment log |
+| `/api/logs/:logId` | GET | Get any deployment log by ID (no worker/deployment context needed) |
+
+### Deployment logs
+
+Every conversation (call, chat session, SMS thread, etc.) produces a **deployment log**. Logs share a common set of base fields and include type-specific fields depending on the channel.
+
+**Base fields** (all log types):
+
+| Field | Description |
+|-|-|
+| `id` | `log_<uuid>` |
+| `type` | Delegate type: `VoiceDeploymentLog`, `ChatDeploymentLog`, `ChatEmbedDeploymentLog`, `WhatsappDeploymentLog`, `SmsDeploymentLog`, `ApiDeploymentLog`, `EmailDeploymentLog` |
+| `workerId` | Parent worker |
+| `deploymentId` | Parent deployment |
+| `flowId` | Flow that was executed |
+| `createdAt` | When the log was created |
+| `extractionsData` | Extracted data (JSON) |
+| `metadata` | Arbitrary metadata (JSON) |
+| `flowSnapshot` | Snapshot of the flow code at execution time |
+| `sessionLogData` | Engine session trace data (JSON) |
+
+**Voice-specific fields:** `startTime`, `endTime`, `fromNumber`, `toNumber`, `direction`, `transcription`, `messages`, `recordingUrl`, `status`, `duration`, `call_sid`, `externalCallId`
+
+**Chat-specific fields:** `startTime`, `endTime`, `userId`, `userName`, `userEmail`, `messages`, `rating`, `feedback`, `messageCount`, `duration`
+
+**ChatEmbed-specific fields:** `startTime`, `endTime`, `sessionId`, `messages`, `status`, `messageCount`, `duration`, `userAgent`, `originUrl`
+
+**WhatsApp/SMS-specific fields:** `startTime`, `endTime`, `fromNumber`, `toNumber`, `direction`, `transcription`, `messages`, `status`
+
+**API-specific fields:** `startTime`, `endTime`, `requestModel`, `requestMessages`, `responseContent`, `promptTokens`, `completionTokens`, `totalTokens`
+
+#### Universal log lookup
+
+The `/api/logs/:logId` endpoint fetches any log by ID without needing to know the worker or deployment. This is useful for:
+- Direct links to logs from external systems (alerts, CRMs, webhooks)
+- Debugging when you only have a log ID
+- Building dashboards that span multiple workers
+
+```bash
+curl -H "x-api-key: YOUR_API_KEY" \
+  https://brainbase-monorepo-api.onrender.com/api/logs/log_82788ca4-6e9f-4778-83d4-96868cbe5edb
+```
+
+The response includes all base fields plus the type-specific delegate fields flattened into the top level. The `type` field tells you which delegate type is present.
