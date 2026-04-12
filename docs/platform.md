@@ -119,6 +119,8 @@ curl -H "x-api-key: YOUR_API_KEY" https://api.brainbase.com/api/workers
 | `/api/workers/:workerId/deploymentLogs/chat` | GET | List chat deployment logs |
 | `/api/workers/:workerId/deploymentLogs/chat/:logId` | GET | Get a chat deployment log |
 | `/api/logs/:logId` | GET | Get any deployment log by ID (no worker/deployment context needed) |
+| `/api/deployments/:deploymentId` | GET | Get any deployment by ID (no worker context needed) |
+| `/api/flows/:flowId` | GET | Get any flow by ID (no worker context needed) |
 
 ### Deployment logs
 
@@ -162,3 +164,27 @@ curl -H "x-api-key: YOUR_API_KEY" \
 ```
 
 The response includes all base fields plus the type-specific delegate fields flattened into the top level. The `type` field tells you which delegate type is present.
+
+#### Universal deployment lookup
+
+The `/api/deployments/:deploymentId` endpoint fetches any deployment by ID without needing to know the worker. Works for all deployment types (Voice, Chat, ChatEmbed, Whatsapp, SMS, Email, Slack, API, VoiceV1).
+
+```bash
+curl -H "x-api-key: YOUR_API_KEY" \
+  https://brainbase-monorepo-api.onrender.com/api/deployments/deploy_531965ce-ff0f-45bd-8495-33cd86329610
+```
+
+Use `?include=sentinelAssignments,successCriteria,deploymentParameters` to include related records. Delegate-specific fields (e.g. `phoneNumber` for voice, `chatAgentId` for chat) are flattened into the response.
+
+#### Universal flow lookup
+
+The `/api/flows/:flowId` endpoint fetches any flow by ID without needing to know the worker.
+
+```bash
+curl -H "x-api-key: YOUR_API_KEY" \
+  https://brainbase-monorepo-api.onrender.com/api/flows/flow_5c26620d-8f14-4e8e-bf75-266b0236fb29
+```
+
+Supports the same query parameters as the worker-scoped endpoint:
+- `?versionId=fv_...` — returns the flow with code/variables from a specific committed version
+- `?deploymentId=deploy_...` — returns the flow with merged flow+deployment parameters in `_mergedParameters`
