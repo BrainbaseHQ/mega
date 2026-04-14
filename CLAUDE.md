@@ -42,7 +42,7 @@ Key rules:
 
 ## Platform interaction
 
-Scripts in `scripts/` interact with the Brainbase API. They require a `BRAINBASE_API_KEY` in `.env`.
+The Brainbase API is deployed at `https://brainbase-monorepo-api.onrender.com`. Scripts in `scripts/` interact with this API. They require a `BRAINBASE_API_KEY` in `.env`.
 
 ```bash
 # List workers

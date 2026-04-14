@@ -218,6 +218,7 @@ See [docs/based.md](docs/based.md) for the full reference.
 
 ## Links
 
+- [Brainbase API](https://brainbase-monorepo-api.onrender.com) — deployed API base URL
 - [Brainbase docs](https://docs.usebrainbase.com)
 - [Mega docs page](https://docs.usebrainbase.com/mega)
 - [Based Language Fundamentals](https://docs.usebrainbase.com/language-fundamentals/overview)
