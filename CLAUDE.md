@@ -53,7 +53,16 @@ The Brainbase API is deployed at `https://brainbase-monorepo-api.onrender.com`. 
 
 # Update a flow
 ./scripts/bb.sh flows update <worker_id> <flow_id> --code-file path/to/flow.based
+
+# Update a flow with commit message (always include on production pushes)
+./scripts/bb.sh flows update <worker_id> <flow_id> --code-file path/to/flow.based --commit-message "fix confirmation loop self-trigger"
 ```
+
+The `flows update` command supports an optional `--commit-message` flag. **Always include a commit message on production pushes.** Good commit messages are short and describe what changed and why, not just what the code does.
+
+- **Good:** `"fix: skip order confirmation loop — LLM was self-triggering without user input"`
+- **Good:** `"default qty to 1, skip confirmation loop"`
+- **Bad:** `"updated flow"`
 
 ## Workflow patterns
 

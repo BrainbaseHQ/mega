@@ -93,13 +93,29 @@ case "${1:-help}" in
                 request POST "/workers/$3/flows" -d "$(jq -n --arg name "$4" --arg code "$code" '{name: $name, code: $code}')"
                 ;;
             update)
-                # Usage: bb.sh flows update <worker_id> <flow_id> --code-file <path>
-                if [ "${5:-}" = "--code-file" ] && [ -n "${6:-}" ]; then
-                    local code
-                    code=$(cat "$6")
-                    request PATCH "/workers/$3/flows/$4" -d "$(jq -n --arg code "$code" '{code: $code}')"
+                # Usage: bb.sh flows update <worker_id> <flow_id> --code-file <path> [--commit-message <msg>]
+                local worker_id="$3"
+                local flow_id="$4"
+                shift 4
+                local code_file=""
+                local commit_message=""
+                while [ $# -gt 0 ]; do
+                    case "$1" in
+                        --code-file) code_file="$2"; shift 2 ;;
+                        --commit-message) commit_message="$2"; shift 2 ;;
+                        *) echo "Unknown flag: $1" >&2; exit 1 ;;
+                    esac
+                done
+                if [ -z "$code_file" ]; then
+                    echo "Usage: bb.sh flows update <worker_id> <flow_id> --code-file <path> [--commit-message <msg>]" >&2
+                    exit 1
+                fi
+                local code
+                code=$(cat "$code_file")
+                if [ -n "$commit_message" ]; then
+                    request PATCH "/workers/$worker_id/flows/$flow_id" -d "$(jq -n --arg code "$code" --arg msg "$commit_message" '{code: $code, commitMessage: $msg}')"
                 else
-                    echo "Usage: bb.sh flows update <worker_id> <flow_id> --code-file <path>"
+                    request PATCH "/workers/$worker_id/flows/$flow_id" -d "$(jq -n --arg code "$code" '{code: $code}')"
                 fi
                 ;;
             *)
@@ -194,7 +210,7 @@ Examples:
   bb.sh workers tags remove <worker_id> <tag_id>
   bb.sh flows list <worker_id>
   bb.sh flows get <worker_id> <flow_id>
-  bb.sh flows update <worker_id> <flow_id> --code-file path/to/flow.based
+  bb.sh flows update <worker_id> <flow_id> --code-file path/to/flow.based --commit-message "fix confirmation loop"
   bb.sh deployments list <worker_id>
   bb.sh logs list <deployment_id>
   bb.sh tags list
