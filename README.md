@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Your AI teammate for the Brainbase Conversational Platform.</strong><br/>
-  Describe what you want. Mega builds it, deploys it, and manages it.
+  Describe what you want. Mega builds it, tests it, and manages it with guarded platform access.
 </p>
 
 <p align="center">
@@ -24,9 +24,9 @@ Mega gives AI coding tools — Claude Code, Cursor, Codex, or anything that read
 You say what you need. Mega knows the rest.
 
 **Write flows** — from business requirements, PDFs, spreadsheets, or a conversation.
-**Deploy anywhere** — voice, chat, SMS, WhatsApp, API. One flow, many channels.
-**Scale** — templatize a working flow and deploy it across dozens of instances.
-**Debug** — pull logs, find where callers get stuck, fix the prompt, redeploy.
+**Deploy anywhere** — voice, chat, chat embed, SMS, WhatsApp, API. One flow can serve many channels.
+**Scale** — templatize a working flow and replicate it across dozens of instances.
+**Debug** — pull logs, runtime errors, LLM logs, and session traces, then fix and re-test.
 
 ## Quick start
 
@@ -103,6 +103,8 @@ until "caller is done":
 ./scripts/bb.sh flows create <worker_id> --name "Booking" --code-file booking.based
 ```
 
+`scripts/bb.sh` covers the common worker, flow, voice deployment, log, and tag paths. For the broader API surface, use the raw curl patterns in `docs/api-reference.md`.
+
 ### 5. Test directly against the engine
 
 ```bash
@@ -115,20 +117,22 @@ curl "https://studio.brainbaselabs.com/v1/chat/completions\
   -d '{"model":"<model>","messages":[{"role":"user","content":"I need a cleaning"}]}'
 ```
 
-### 6. Deploy to a real channel
+### 6. Approve and deploy to a real channel
+
+Mega treats platform writes as guarded operations. `GET` requests may run by default, but `POST`, `PATCH`, `PUT`, and `DELETE` require explicit user approval before execution, including live deployments and production flow updates.
 
 ```bash
 ./scripts/bb.sh deployments create-voice <worker_id> \
-  --flow-id <flow_id> --phone "+15551234567" --name "Main Line"
+  --flow-id <flow_id> --phone "+15551234567" --name "Main Line" --engine-version v2
 ```
 
 ### Scaling: one flow, many deployments
 
-Write one flow with `variables`:
+For v2 live flows, do not assume dashboard variables are injected automatically. Put per-instance configuration at the top of each generated flow, or pass `variables` explicitly through `x-initial-state` in controlled engine tests.
 
 ```python
-name = variables.get('office_name', 'our office')
-hours = variables.get('hours', '9am-5pm')
+OFFICE_NAME = "Riverside Dental"
+HOURS = "9am-5pm"
 ```
 
 Deploy it 40 times with different values per office. Tell Mega:
@@ -138,7 +142,7 @@ Deploy it 40 times with different values per office. Tell Mega:
  services. Deploy the booking flow to each one."
 ```
 
-It reads the spreadsheet, creates workers, and deploys each with the right variables.
+It reads the spreadsheet, creates reviewed per-instance flows, tests each path, asks for approval, then deploys with the right configuration.
 
 ## Testing v1 engine flows
 
@@ -160,15 +164,16 @@ The AI handles everything: fetching the flow, understanding the branches, choosi
 
 ### Setup
 
+Use `uv` for local Python dependencies:
+
 ```bash
-pip install websockets
-# Set BRAINBASE_API_KEY in .env
+uv run --with websockets python scripts/test_v1_engine.py <worker_id> <flow_id> "Hello"
 ```
 
 ### Script reference
 
 ```bash
-python scripts/test_v1_engine.py <worker_id> <flow_id> "message 1" "message 2" ...
+uv run --with websockets python scripts/test_v1_engine.py <worker_id> <flow_id> "message 1" "message 2" ...
 ```
 
 | Flag | Default | Description |
@@ -185,7 +190,8 @@ mega/
 ├── docs/
 │   ├── based.md           # Complete Based language reference
 │   ├── platform.md        # Workers, flows, deployments, resources
-│   └── deployments.md     # Deployment types and configuration
+│   ├── deployments.md     # Deployment types and configuration
+│   └── api-reference.md   # API hot paths, payloads, gotchas, curl patterns
 ├── examples/              # Validated, engine-tested Based flows
 │   ├── inbound-router.based
 │   ├── appointment-booking.based
