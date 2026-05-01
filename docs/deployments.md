@@ -10,13 +10,13 @@ Inbound and outbound phone calls. The most common deployment type.
 |-|-|-|
 | `flowId` | Yes | The Based flow to execute |
 | `phoneNumber` | Yes | Phone number to receive/make calls (E.164) |
-| `voiceId` | No | Voice for TTS |
-| `language` | No | Language code |
-| `interruptionSensitivity` | No | How easily the user can interrupt (0-1) |
-| `maxCallDuration` | No | Max call length in seconds |
+| `externalConfig.voiceId` | No | Voice for TTS |
+| `externalConfig.language` | No | Language code |
+| `externalConfig.interruptibility` | No | How easily the user can interrupt (0-1) |
+| `externalConfig.maxCallDurationMs` | No | Max call length in milliseconds |
 | `backupPhoneNumber` | No | Fallback number if transfer fails |
 
-> **v2 engine routing:** The monorepo API does **not** automatically read the worker's `engineVersion` when creating a voice deployment. It only checks `externalConfig.engineVersion` in the request body. If omitted, the deployment routes to the **v1.5 voice server** regardless of the worker's engine version. To route to the v2 conversational-voice server, you must explicitly pass `engineVersion` in the request:
+> **v2 engine routing:** Pass `externalConfig.engineVersion: "v2"` when creating voice deployments. The API now attempts to inherit the worker's `engineVersion` when this is omitted, but callers should pass it explicitly for deterministic routing and baked-in agent behavior:
 >
 > ```json
 > {
@@ -26,8 +26,6 @@ Inbound and outbound phone calls. The most common deployment type.
 >   "externalConfig": { "engineVersion": "v2" }
 > }
 > ```
->
-> This is a known monorepo bug — the API should inherit `engineVersion` from the worker, but currently does not.
 
 Voice deployments support:
 - Call transfer via `transfer(phone_number)` in Based
@@ -56,7 +54,7 @@ Embeddable chat widget for websites.
 | `agentLogo` | No | Logo URL |
 | `primaryColor` | No | Widget theme color (hex) |
 | `welcomeMessage` | No | Greeting message |
-| `stylingConfig` | No | Custom CSS/styling JSON |
+| `styling` | No | Custom CSS/styling JSON |
 
 Each chat embed deployment gets a unique `embedId` for the widget script.
 
@@ -90,6 +88,14 @@ OpenAI-compatible API endpoint for programmatic access.
 | `flowId` | Yes | The Based flow to execute |
 
 API deployments expose an OpenAI-compatible `/v1/chat/completions` endpoint. Use any OpenAI SDK to interact with the flow.
+
+## API source of truth
+
+See [api-reference.md](api-reference.md) for the current OpenAPI-aligned deployment endpoints, including flow versions, deployment parameters/history/default checks, logs, runtime errors, sessions, phone assets, integrations, tests, exports, and outbound campaigns.
+
+## Guarded writes
+
+Agents may inspect deployments with `GET` requests. Creating, updating, deleting, or launching live deployment behavior uses `POST`, `PATCH`, `PUT`, or `DELETE` and requires explicit user approval by default. When the API returns an error, preserve the status and body in the agent loop before deciding on a fix.
 
 ## LLM model selection
 
