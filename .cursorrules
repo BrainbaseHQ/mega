@@ -4,21 +4,27 @@ Read these docs before writing Based code or interacting with the platform:
 - docs/based.md — Complete Based language reference
 - docs/platform.md — Platform data model (workers, flows, deployments)
 - docs/deployments.md — Deployment types and configuration
+- docs/api-reference.md — Brainbase API operations, payloads, and error shapes
 - examples/ — Production-quality Based flow examples
 
 Based is Python + conversation primitives (loop/until, talk, say, ask, done, transfer).
 The core pattern is: loop → talk(prompt) → until "condition" → handler code.
 Wrap API calls in try/except. Keep voice responses short.
-In v2, `variables` dict is NOT auto-injected — hardcode config values directly in flows.
+In v2, `variables` is NOT auto-injected except when explicitly passed via `x-initial-state.variables`.
 
 Scripts in scripts/ interact with the Brainbase API using BRAINBASE_API_KEY from .env.
+GET/read-only API operations may run without extra approval. POST/PATCH/PUT/DELETE operations require explicit user approval by default.
+Return API error bodies and runtime context to the agent loop so failures can be fixed and re-tested.
 
 ## Mandatory workflow
 
 When writing or modifying flows, always follow this order:
 1. Write the flow
-2. Test via the OAI-compatible engine (see README or CLAUDE.md "Testing flows" section) — run at least 2-3 turns
-3. Fix issues found in testing
-4. Only then deploy to a live channel
+2. Create the worker and flow
+3. Test via the OAI-compatible engine (see README or CLAUDE.md "Testing flows" section) — run at least 2-3 turns
+4. Fix issues found in testing, then re-test
+5. Require explicit user approval before live deployment
+6. Only then deploy to a live channel
 
 Do NOT use chat deployments for testing — they are deprecated. The OAI engine is the only testing interface.
+Voice deployments should pass `externalConfig.engineVersion: "v2"` explicitly even though the API may inherit worker `engineVersion`.
