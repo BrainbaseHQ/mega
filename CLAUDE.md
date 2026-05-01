@@ -16,6 +16,7 @@ Read these before writing any Based code or interacting with the platform:
 - `docs/based.md` — Complete Based language reference (syntax, patterns, best practices)
 - `docs/platform.md` — Workers, flows, deployments, resources — the data model
 - `docs/deployments.md` — Deployment types and their configuration
+- `docs/api-reference.md` — Brainbase API operations, payloads, and error shapes
 - `examples/` — Production-quality Based flows you can reference and adapt
 
 For the latest official Brainbase documentation, see https://docs.usebrainbase.com. The docs in this repo are the canonical Based reference but platform docs may be updated independently.
@@ -38,11 +39,12 @@ Key rules:
 - `say()` sends a message without LLM involvement
 - `return` inside an `until` block goes back to the enclosing `loop`
 - Always wrap API calls in `try/except`
-- In v2, `variables` dict is **not** auto-injected — hardcode config values directly (see `docs/based.md` for details)
+- In v2, `variables` is **not** auto-injected except when explicitly passed via `x-initial-state.variables`
 
 ## Platform interaction
 
 The Brainbase API is deployed at `https://brainbase-monorepo-api.onrender.com`. Scripts in `scripts/` interact with this API. They require a `BRAINBASE_API_KEY` in `.env`.
+GET/read-only operations may run without extra approval. POST/PATCH/PUT/DELETE operations require explicit user approval by default. When an API or runtime call fails, return the error body and relevant runtime context to the agent loop so the flow can be fixed and re-tested.
 
 ```bash
 # List workers
@@ -70,10 +72,11 @@ The `flows update` command supports an optional `--commit-message` flag. **Alway
 1. Read the requirements document
 2. Identify the conversation flow — what are the phases? what decisions does the agent make?
 3. Write the Based flow, using `loop/until` for each decision point
-4. Hardcode configuration values directly in the flow (v2 does not auto-inject `variables`)
-5. **Test the flow via the OAI-compatible engine** before creating any live deployment (see [Testing flows](#testing-flows) below)
-6. Fix any issues, iterate until the flow works end-to-end
-7. Only then deploy to a live channel (voice, SMS, etc.)
+4. Create the worker and flow via the API
+5. **Test the flow via the OAI-compatible engine** for at least 2-3 turns before creating any live deployment (see [Testing flows](#testing-flows) below)
+6. Fix any issues, then re-test until runtime behavior is clean
+7. Require explicit user approval before any live deployment
+8. Only then deploy to a live channel (voice, SMS, etc.)
 
 ### Scaling one deployment to many
 1. Identify what varies between instances (name, location, hours, phone number, etc.)
@@ -104,6 +107,7 @@ curl "https://studio.brainbaselabs.com/v1/chat/completions\
 
 - Use the same `session_id` across requests to continue a multi-turn conversation
 - Run at least 2-3 turns to verify the full conversation flow before deploying
+- If the engine returns an API error body or runtime context, surface it to the agent loop, fix the flow, and re-test
 - `end_call()` and `transfer()` are only injected in voice deployments — they will error in engine tests. Wrap them in `try/except` with `done()` as fallback if you want the flow to be testable outside voice.
 - Do **not** use chat deployments for testing — they are deprecated. The OAI engine replaces them.
 
@@ -114,4 +118,4 @@ curl "https://studio.brainbaselabs.com/v1/chat/completions\
 - Voice flows should keep `say()` messages short (1-3 sentences)
 - `transfer()` and `end_call()` only work in voice deployments
 - `time.sleep()` is automatically converted to non-blocking `asyncio.sleep()`
-- **Voice deployment v2 routing:** When creating voice deployments via the API, you **must** pass `"externalConfig": { "engineVersion": "v2" }` to route to the v2 voice server. The API does not auto-read the worker's `engineVersion`. Without this, deployments route to v1.5. See `docs/deployments.md` for details.
+- **Voice deployment v2 routing:** When creating voice deployments via the API, pass `externalConfig.engineVersion: "v2"` explicitly even though the API may inherit the worker `engineVersion`. See `docs/deployments.md` for details.
