@@ -35,10 +35,10 @@ A flow is a Based program attached to a worker. Each worker can have multiple fl
 | `id` | `flow_<uuid>` |
 | `name` | Flow name |
 | `code` | The Based source code |
-| `variables` | JSON key-value pairs accessible via `variables` in the flow |
+| `variables` | JSON config stored on the flow; in v2 runtime it is only available when explicitly passed through `x-initial-state.variables` or another controlled runtime path |
 | `version` | Auto-incrementing version number |
 
-Flows can have **flow parameters** — named variables configured per-deployment, enabling one flow to serve many deployments with different settings.
+Flows can have **flow parameters** and deployments can have **deployment parameters**. The API can return merged parameters for inspection, but do not assume they are automatically injected into the v2 Based runtime.
 
 ### Deployments
 
@@ -94,10 +94,15 @@ A deployment connects a flow to a channel. When a call/message arrives on that c
 All API requests require an `x-api-key` header with your team's API key.
 
 ```bash
-curl -H "x-api-key: YOUR_API_KEY" https://api.brainbase.com/api/workers
+curl -H "x-api-key: YOUR_API_KEY" \
+  https://brainbase-monorepo-api.onrender.com/api/workers
 ```
 
-## Key API endpoints
+## API reference
+
+Use [api-reference.md](api-reference.md) for source-aligned endpoint families, payload gotchas, raw curl patterns, and the approval gate. This file covers the data model and the most common lookup/debug paths.
+
+### Common endpoints
 
 | Endpoint | Method | Description |
 |-|-|-|
@@ -110,17 +115,34 @@ curl -H "x-api-key: YOUR_API_KEY" https://api.brainbase.com/api/workers
 | `/api/workers/:workerId/flows` | POST | Create a flow |
 | `/api/workers/:workerId/flows/:id` | GET | Get a flow |
 | `/api/workers/:workerId/flows/:id` | PATCH | Update a flow |
+| `/api/workers/:workerId/flows/:flowId/versions` | GET/POST | List or commit flow versions |
 | `/api/workers/:workerId/deployments/voice` | GET | List voice deployments |
 | `/api/workers/:workerId/deployments/voice` | POST | Create voice deployment |
+| `/api/workers/:workerId/deployments/chat` | GET/POST | List or create chat deployments |
+| `/api/workers/:workerId/deployments/chat-embed` | GET/POST | List or create chat embed deployments |
+| `/api/workers/:workerId/deployments/voicev1` | GET/POST | List or create legacy voice v1 deployments |
+| `/api/workers/:workerId/deployments/:deploymentId/params` | GET/POST | List or create deployment parameters |
+| `/api/workers/:workerId/deployments/:deploymentId/history` | GET | List deployment history |
 | `/api/workers/:workerId/resources/:type` | GET | List resources (link/file) |
+| `/api/workers/:workerId/folders` | GET/POST | List or create RAG folders |
 | `/api/workers/:workerId/resources/query` | POST | Query knowledge base |
 | `/api/workers/:workerId/deploymentLogs/voice` | GET | List voice deployment logs |
 | `/api/workers/:workerId/deploymentLogs/voice/:logId` | GET | Get a voice deployment log |
 | `/api/workers/:workerId/deploymentLogs/chat` | GET | List chat deployment logs |
 | `/api/workers/:workerId/deploymentLogs/chat/:logId` | GET | Get a chat deployment log |
+| `/api/workers/:workerId/runtime-errors` | GET | List runtime errors |
+| `/api/workers/:workerId/llm-logs` | GET | List LLM request/response traces |
+| `/api/workers/:workerId/sessions/:sessionId` | GET | Get engine session state, messages, trace, and error |
 | `/api/logs/:logId` | GET | Get any deployment log by ID (no worker/deployment context needed) |
 | `/api/deployments/:deploymentId` | GET | Get any deployment by ID (no worker context needed) |
 | `/api/flows/:flowId` | GET | Get any flow by ID (no worker context needed) |
+| `/api/team/assets/phone_numbers` | GET | List registered phone numbers |
+| `/api/team/integrations` | GET | List team integrations |
+| `/api/team/exports` | GET/POST | List or create log export jobs |
+
+### Approval gate
+
+Agents may run `GET` requests for inspection. `POST`, `PATCH`, `PUT`, and `DELETE` requests require explicit user approval by default. When a platform call fails, return the HTTP status, response body, path, and relevant IDs back to the agent loop so the next step can fix and re-test from real error context.
 
 ### Deployment logs
 

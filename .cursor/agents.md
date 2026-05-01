@@ -8,6 +8,7 @@ Read these docs — they are the canonical reference:
 - `docs/based.md` — Based language (syntax, patterns, known limitations)
 - `docs/platform.md` — Workers, flows, deployments, resources
 - `docs/deployments.md` — Deployment types and configuration
+- `docs/api-reference.md` — Brainbase API operations, payloads, and error shapes
 - `examples/` — Production-quality Based flows
 
 ## Mandatory workflow for flows
@@ -28,15 +29,22 @@ Read these docs — they are the canonical reference:
    ```
 4. Run at least 2-3 turns to verify the conversation flow end-to-end
 5. Fix any runtime errors, then re-test
-6. Only then deploy to a live channel (voice, SMS, etc.)
+6. Require explicit user approval before live deployment
+7. Only then deploy to a live channel (voice, SMS, etc.)
 
 Do NOT use chat deployments for testing — they are deprecated. The OAI engine is the only testing interface.
 
+## API safety
+
+- GET/read-only API operations may run without extra approval.
+- POST/PATCH/PUT/DELETE operations require explicit user approval by default.
+- Return API error bodies and runtime context to the agent loop, then fix and re-test.
+
 ## Key v2 gotchas
 
-- `variables` dict is NOT auto-injected in v2 — hardcode config values directly
+- `variables` is NOT auto-injected in v2 except when explicitly passed via `x-initial-state.variables`
 - `.ask()` returns `AskProxy`, not a dict — use `.to_json()` before passing to `extract()`
-- Voice deployment creation requires `externalConfig: { engineVersion: "v2" }` — the API does not auto-read from the worker
+- Voice deployment creation should pass `externalConfig.engineVersion: "v2"` explicitly even though the API may inherit the worker `engineVersion`
 - `end_call()` and `transfer()` only exist in voice deployments — wrap in `try/except` with `done()` fallback for engine-testable flows
 - `break` inside `for` loops in `until` blocks breaks the transpiler — use list comprehensions
 - Don't put inline comments after `return` — put the comment on the line above
