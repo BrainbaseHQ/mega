@@ -9,6 +9,8 @@ Read these docs before writing Based code or interacting with the platform:
 
 Based is Python + conversation primitives (loop/until, talk, say, ask, done, transfer).
 The core pattern is: loop → talk(prompt) → until "condition" → handler code.
+Keep `res = talk(...)` assignments on one physical line. Build long prompts in variables before the loop, then pass the variable to `talk()`.
+Inside `until` blocks, keep `return` statements bare or as one-line `return "message"` statements. Put comments on separate lines.
 Wrap API calls in try/except. Keep voice responses short.
 In v2, `variables` is NOT auto-injected except when explicitly passed via `x-initial-state.variables`.
 

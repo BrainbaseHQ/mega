@@ -327,7 +327,8 @@ until "customer adds an item":
     item = res.ask(question="What did they add?", example={"name": "tacos", "qty": 2})
     order_items.append(item)
     say(f"Added {item['qty']}x {item['name']}. Anything else?")
-    return  # go back to loop
+    # go back to loop
+    return
 until "customer is done ordering":
     say(f"Your order has {len(order_items)} items. Let me calculate the total.")
 ```
@@ -434,7 +435,8 @@ until "customer wants to book":
         say(f"You're all set for {schedule['date']} at {schedule['time']}!")
     else:
         say("That slot isn't available. Would you like to try a different time?")
-        return  # back to loop
+        # back to loop
+        return
 ```
 
 ---
@@ -457,7 +459,8 @@ until "caller needs sales":
         say(f"Great, {contact['name']}! We'll see you soon.")
     until "customer wants pricing":
         say("I can help with that. Which model are you interested in?")
-        return  # stay in sales loop
+        # stay in sales loop
+        return
 until "caller needs service":
     say("Let me get you to the right person.")
     # handle service routing...
@@ -476,7 +479,8 @@ until "customer adds an item":
     item = res.ask(question="What did they order?", example={"name": "tacos", "quantity": 2})
     order.append(item)
     say(f"Added. Anything else?")
-    return  # <-- back to loop, keeps taking orders
+    # back to loop, keeps taking orders
+    return
 until "customer is done":
     say(f"Got it. Your total is ${calculate_total(order):.2f}.")
 ```
@@ -561,7 +565,8 @@ until "customer provides address info":
     missing = [f for f in ["street", "city", "state", "zip"] if f not in collected]
     if missing:
         say(f"Got it. I still need your {', '.join(missing)}.")
-        return  # back to loop
+        # back to loop
+        return
     say("Thanks, I have your full address.")
 until "customer wants to stop or go back":
     say("No problem.")
@@ -576,13 +581,14 @@ name = variables.get('agent_name', 'Assistant')
 company = variables.get('company_name', 'our company')
 greeting = variables.get('greeting', f'Thank you for calling {company}.')
 hours = variables.get('hours_of_operation', '9am to 5pm, Monday through Friday')
+PROMPT = f"""You are {name}, an AI assistant for {company}.
+Hours of operation: {hours}.
+Help callers with their requests. Be professional and concise."""
 
 say(greeting)
 
 loop:
-    res = talk(f"""You are {name}, an AI assistant for {company}.
-Hours of operation: {hours}.
-Help callers with their requests. Be professional and concise.""", False)
+    res = talk(PROMPT, False)
 until "caller has a question about hours":
     say(f"We're open {hours}.")
     return
@@ -642,7 +648,8 @@ until "caller has provided all details":
         say("You're all set!")
     until "caller wants to change something":
         say("No problem. What would you like to change?")
-        return  # back to outer loop
+        # back to outer loop
+        return
 ```
 
 ### Order taking with running total
@@ -730,6 +737,42 @@ until "caller needs sales":
 
 You can still use regular Python functions for helper logic (API calls, data processing, etc.) — just keep the `loop/until/talk` structure at the top level. `async def` functions with `.ask()` calls work fine.
 
+### Keep `talk()` and `return` boundary statements compact
+
+For predictable v2 parsing and runtime handoff, keep the statements that define conversation boundaries simple:
+
+- Put each `res = talk(...)` assignment on one physical line.
+- Build long prompts in variables before the `loop`, then pass the variable to `talk()`.
+- In `until` blocks, use bare `return` or one-line `return "message"` / `return f"{message}"`.
+- Put comments on the line before `return`, not after it.
+
+```python
+# GOOD
+PROMPT = f"""You are {name}, an AI assistant for {company}.
+Hours: {hours}.
+Help callers clearly and concisely."""
+
+loop:
+    res = talk(PROMPT, False)
+until "caller has a question about hours":
+    # back to loop after answering
+    return f"We're open {hours}."
+```
+
+```python
+# AVOID
+loop:
+    res = talk(
+        f"""You are {name}, an AI assistant for {company}.
+Hours: {hours}.""",
+        False,
+    )
+until "caller has a question about hours":
+    return (
+        f"We're open {hours}."
+    )
+```
+
 ### `variables` dict not auto-injected in v2
 
 The `variables` dict documented above is **not** automatically available in the v2 runtime. Using `variables.get(...)` at the top level will crash the flow with `name 'variables' is not defined`. The engine only has access to values passed via `x-initial-state`. For single-deployment flows, hardcode values directly. See the [Flow variables](#flow-variables) section for details and workarounds.
@@ -750,12 +793,12 @@ matches = [s for s in services if s["name"] == target]
 matched = matches[0] if len(matches) > 0 else None
 ```
 
-### Don't put inline comments after `return`
+### Put comments before `return`
 
-The Based converter doesn't handle `return  # comment` correctly — the comment gets treated as a return value and produces a syntax error. Put the comment on a separate line instead.
+For consistent v2 parsing, put comments on their own line before `return`.
 
 ```python
-# BAD — will break the converter
+# AVOID
     return  # go back to loop
 
 # GOOD

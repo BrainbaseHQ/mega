@@ -34,10 +34,12 @@ until "condition the LLM evaluates":
 
 Key rules:
 - `talk()` takes a system prompt and a `first` boolean (`True` = AI speaks first, `False` = wait for user)
+- Keep `res = talk(...)` on one physical line. Build long prompts in a variable before the loop, then pass that variable to `talk()`.
 - `until` conditions are natural language — the LLM decides when they match
 - `.ask()` extracts structured data: `res.ask(question="...", example={...})`
 - `say()` sends a message without LLM involvement
 - `return` inside an `until` block goes back to the enclosing `loop`
+- Keep `return` statements in `until` blocks simple: use bare `return` or a one-line `return "message"`. Put comments on separate lines.
 - Always wrap API calls in `try/except`
 - In v2, `variables` is **not** auto-injected except when explicitly passed via `x-initial-state.variables`
 
